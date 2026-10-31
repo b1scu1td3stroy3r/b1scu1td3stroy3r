@@ -24,7 +24,11 @@ Final-year **BSc (Honours) Computing & IT** student at **The Open University**, 
 - 🎯 **Security Focus:** Insecure Object Deserialisation, Web Transport Security, Cryptographic Analysis & Reverse Engineering
 - 📜 **Verified Credentials:** [Credly Profile](https://www.credly.com/users/terry_white)
 - 🚩 **Offensive Labs:** [Hack The Box Profile](https://app.hackthebox.com/public/users/2571595)
+<<<<<<< HEAD
 - ⏱️ **Competitive CTF:** [CTFtime Profile](https://ctftime.org/user/237405)
+=======
+-⏱️ **Competitive CTF:** [CTFtime Profile](https://ctftime.org/user/237405)
+>>>>>>> 6c89f18 (docs: update profile readme tweaks)
 
 ---
 
@@ -48,6 +52,11 @@ Final-year **BSc (Honours) Computing & IT** student at **The Open University**, 
 
 ### 📬 Connect & Verify
 [![Credly](https://img.shields.io/badge/Credly-Verified_Badges-FF6B00?style=flat&logo=credly&logoColor=white)](https://www.credly.com/users/terry_white)
+<<<<<<< HEAD
 [![Hack The Box](https://img.shields.io/badge/b1scu1td3stroy3r-9FEF00?style=flat&logo=hackthebox&logoColor=black)](https://app.hackthebox.com/public/users/2571595)
 [![CTFtime](https://img.shields.io/badge/CTFtime-b1scu1td3stroy3r-E63946?style=flat&logo=flag&logoColor=white)](https://ctftime.org/user/237405)
+=======
+[![Hack The Box](https://img.shields.io/badge/Hack_The_Box-Rank_Profile-9FEF00?style=flat&logo=hackthebox&logoColor=black)](https://app.hackthebox.com/public/users/2571595)
+[![CTFtime](https://img.shields.io/badge/b1scu1td3stroy3r-E63946?style=flat&logo=flag&logoColor=white)](https://ctftime.org/user/237405)
+>>>>>>> 6c89f18 (docs: update profile readme tweaks)
 [![GitHub](https://img.shields.io/badge/GitHub-b1scu1td3stroy3r-181717?style=flat&logo=github&logoColor=white)](https://github.com/b1scu1td3stroy3r)
