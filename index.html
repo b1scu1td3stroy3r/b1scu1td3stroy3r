@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biscuit Destroyer: Header Breach</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Courier New', Courier, monospace;
+      user-select: none;
+    }
+    body {
+      background: #050807;
+      color: #00ff66;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 12px;
+      overflow-x: hidden;
+    }
+    .crt::after {
+      content: " ";
+      display: block;
+      position: fixed;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+      z-index: 100;
+      background-size: 100% 3px, 6px 100%;
+      pointer-events: none;
+    }
+    header {
+      width: 100%;
+      max-width: 820px;
+      border: 1px solid #00ff66;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      background: #021107;
+      box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
+    }
+    .badge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .badge-btn {
+      background: #001a0a;
+      border: 1px solid #00ff66;
+      color: #00ff66;
+      padding: 4px 10px;
+      text-decoration: none;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .badge-btn:hover {
+      background: #00ff66;
+      color: #050807;
+      font-weight: bold;
+    }
+    #game-container {
+      position: relative;
+      width: 100%;
+      max-width: 820px;
+      border: 2px solid #00ff66;
+      box-shadow: 0 0 25px rgba(0, 255, 102, 0.25);
+      background: #000;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #020803;
+    }
+    .controls-hint {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #00cc52;
+      text-align: center;
+    }
+  </style>
+</head>
+<body class="crt">
+
+  <header>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <div>
+        <h1 style="font-size:18px; letter-spacing:1px;">OPERATOR: TERENCE WHITE [b1scu1td3stroy3r]</h1>
+        <p style="font-size:12px; color:#88ffb3; margin-top:2px;">Final Year BSc (Honours) Computing & IT • The Open University</p>
+      </div>
+      <div style="font-size:12px; text-align:right;">
+        STATUS: <span style="color:#00ff66; font-weight:bold;">READY</span>
+      </div>
+    </div>
+    <div class="badge-bar">
+      <a class="badge-btn" href="https://www.credly.com/users/terence-white.f88e9516" target="_blank">📜 Credly Verified</a>
+      <a class="badge-btn" href="https://app.hackthebox.com/profile/2571595" target="_blank">🚩 Hack The Box</a>
+      <a class="badge-btn" href="https://github.com/b1scu1td3stroy3r" target="_blank">🐙 GitHub Profile</a>
+    </div>
+  </header>
+
+  <div id="game-container">
+    <canvas id="gameCanvas" width="800" height="520"></canvas>
+  </div>
+  <p class="controls-hint">Controls: Left/Right Arrow Keys, [A]/[D], or Drag with Mouse/Touch</p>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let paddleW = 110, paddleH = 14;
+    let playerX = (canvas.width - paddleW) / 2;
+    let virusX = (canvas.width - paddleW) / 2;
+    let leftPressed = false, rightPressed = false;
+
+    let ballX = canvas.width / 2;
+    let ballY = canvas.height - 80;
+    let ballSpeed = 4.5;
+    let ballDX = 3.2;
+    let ballDY = -3.8;
+    let ballRadius = 6;
+
+    let score = 0;
+    let gameOver = false;
+    let victory = false;
+
+    // ASCII Bricks Matrix
+    const brickRows = 4;
+    const brickCols = 10;
+    const brickW = 68;
+    const brickH = 18;
+    const brickPadding = 6;
+    const offsetTop = 110;
+    const offsetLeft = 32;
+
+    const bricks = [];
+    for (let c = 0; c < brickCols; c++) {
+      bricks[c] = [];
+      for (let r = 0; r < brickRows; r++) {
+        bricks[c][r] = { x: 0, y: 0, status: 1 };
+      }
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Right" || e.key === "ArrowRight" || e.key === "d" || e.key === "D") leftPressed = false, rightPressed = true;
+      if (e.key === "Left" || e.key === "ArrowLeft" || e.key === "a" || e.key === "A") rightPressed = false, leftPressed = true;
+    });
+
+    document.addEventListener("keyup", (e) => {
+      if (e.key === "Right" || e.key === "ArrowRight" || e.key === "d" || e.key === "D") rightPressed = false;
+      if (e.key === "Left" || e.key === "ArrowLeft" || e.key === "a" || e.key === "A") leftPressed = false;
+    });
+
+    canvas.addEventListener("mousemove", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const relativeX = (e.clientX - rect.left) * (canvas.width / rect.width);
+      if (relativeX > 0 && relativeX < canvas.width) {
+        playerX = relativeX - paddleW / 2;
+      }
+    });
+
+    canvas.addEventListener("touchmove", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const relativeX = (e.touches[0].clientX - rect.left) * (canvas.width / rect.width);
+      if (relativeX > 0 && relativeX < canvas.width) {
+        playerX = relativeX - paddleW / 2;
+      }
+    });
+
+    function collisionDetection() {
+      let activeCount = 0;
+      for (let c = 0; c < brickCols; c++) {
+        for (let r = 0; r < brickRows; r++) {
+          const b = bricks[c][r];
+          if (b.status === 1) {
+            activeCount++;
+            if (ballX > b.x && ballX < b.x + brickW && ballY > b.y && ballY < b.y + brickH) {
+              ballDY = -ballDY;
+              b.status = 0;
+              score += 25;
+            }
+          }
+        }
+      }
+      if (activeCount === 0) victory = true;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // AI Paddle (Virus)
+      ctx.fillStyle = "#ff3355";
+      ctx.shadowColor = "#ff3355";
+      ctx.shadowBlur = 10;
+      ctx.fillRect(virusX, 20, paddleW, paddleH);
+
+      // Player Paddle (Firewall)
+      ctx.fillStyle = "#00ff66";
+      ctx.shadowColor = "#00ff66";
+      ctx.shadowBlur = 10;
+      ctx.fillRect(playerX, canvas.height - 30, paddleW, paddleH);
+
+      // Bricks
+      for (let c = 0; c < brickCols; c++) {
+        for (let r = 0; r < brickRows; r++) {
+          if (bricks[c][r].status === 1) {
+            const brickX = c * (brickW + brickPadding) + offsetLeft;
+            const brickY = r * (brickH + brickPadding) + offsetTop;
+            bricks[c][r].x = brickX;
+            bricks[c][r].y = brickY;
+            ctx.fillStyle = r % 2 === 0 ? "#00ffcc" : "#00aa66";
+            ctx.shadowColor = "#00ffcc";
+            ctx.shadowBlur = 6;
+            ctx.fillRect(brickX, brickY, brickW, brickH);
+          }
+        }
+      }
+
+      // Ball
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.shadowColor = "#ffffff";
+      ctx.shadowBlur = 12;
+      ctx.fill();
+      ctx.closePath();
+
+      // HUD
+      ctx.shadowBlur = 0;
+      ctx.font = "14px 'Courier New'";
+      ctx.fillStyle = "#00ff66";
+      ctx.fillText(`AUDIT SCORE: ${score}`, 20, 480);
+
+      // AI movement tracking
+      const targetAI = ballX - paddleW / 2;
+      virusX += (targetAI - virusX) * 0.055;
+
+      // Ball bouncing logic
+      if (ballX + ballDX > canvas.width - ballRadius || ballX + ballDX < ballRadius) {
+        ballDX = -ballDX;
+      }
+
+      // Top paddle bounce (Virus)
+      if (ballY + ballDY < 20 + paddleH + ballRadius && ballX > virusX && ballX < virusX + paddleW) {
+        ballDY = Math.abs(ballDY);
+      } else if (ballY + ballDY < ballRadius) {
+        ballDY = -ballDY;
+      }
+
+      // Player paddle bounce
+      if (ballY + ballDY > canvas.height - 30 - ballRadius && ballX > playerX && ballX < playerX + paddleW) {
+        ballDY = -Math.abs(ballDY);
+      } else if (ballY + ballDY > canvas.height - ballRadius) {
+        gameOver = true;
+      }
+
+      collisionDetection();
+
+      // Player controls
+      if (rightPressed && playerX < canvas.width - paddleW) playerX += 7;
+      if (leftPressed && playerX > 0) playerX -= 7;
+
+      if (!gameOver && !victory) {
+        ballX += ballDX;
+        ballY += ballDY;
+        requestAnimationFrame(draw);
+      } else {
+        ctx.fillStyle = "rgba(0,0,0,0.85)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = "24px 'Courier New'";
+        ctx.textAlign = "center";
+        if (victory) {
+          ctx.fillStyle = "#00ff66";
+          ctx.fillText("HEADER BREACH COMPLETE - VIRUS QUARANTINED", canvas.width / 2, canvas.height / 2);
+        } else {
+          ctx.fillStyle = "#ff3355";
+          ctx.fillText("BREACH FAILED - HOST COMPROMISED", canvas.width / 2, canvas.height / 2);
+        }
+        ctx.font = "14px 'Courier New'";
+        ctx.fillStyle = "#88ffb3";
+        ctx.fillText("Reload page to re-initialise audit.", canvas.width / 2, canvas.height / 2 + 40);
+      }
+    }
+    draw();
+  </script>
+</body>
+</html>
