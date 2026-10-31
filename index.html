@@ -100,8 +100,9 @@
       </div>
     </div>
     <div class="badge-bar">
-      <a class="badge-btn" href="https://www.credly.com/users/terence-white.f88e9516" target="_blank">📜 Credly Verified</a>
+      <a class="badge-btn" href="https://www.credly.com/users/terry_white" target="_blank">📜 Credly Verified</a>
       <a class="badge-btn" href="https://app.hackthebox.com/profile/2571595" target="_blank">🚩 Hack The Box</a>
+      <a class="badge-btn" href="https://ctftime.org/user/237405" target="_blank">⏱️ CTFtime</a>
       <a class="badge-btn" href="https://github.com/b1scu1td3stroy3r" target="_blank">🐙 GitHub Profile</a>
     </div>
   </header>
@@ -130,7 +131,7 @@
     let gameOver = false;
     let victory = false;
 
-    // 5x3 Glyph Matrix spelling 'B 1 S C U 1 T'
+    // 5x3 Glyph Matrix
     const font5x3 = {
       'B': [[1,1,0],[1,0,1],[1,1,0],[1,0,1],[1,1,0]],
       '1': [[0,1,0],[1,1,0],[0,1,0],[0,1,0],[1,1,1]],
@@ -141,32 +142,40 @@
     };
 
     const word = ['B', '1', 'S', 'C', 'U', '1', 'T'];
-    const pixelSize = 13;
+    const brickSize = 13;
+    const brickGap = 3;
     const letterSpacing = 28;
-    const startX = 40;
-    const startY = 110;
+
+    // Single letter width: 3 bricks + 2 internal gaps = 45px
+    const letterWidth = (3 * brickSize) + (2 * brickGap);
+
+    // Total width of all 7 letters + 6 inter-letter spaces = 483px
+    const totalWordWidth = (word.length * letterWidth) + ((word.length - 1) * letterSpacing);
+
+    // Exact horizontal centering on an 800px wide canvas (~158px margin on each side)
+    const startX = Math.round((canvas.width - totalWordWidth) / 2);
+    const startY = 115;
 
     const bricks = [];
 
-    // Build ASCII-word bricks
-    let currentX = startX;
-    word.forEach((char) => {
+    word.forEach((char, charIndex) => {
       const grid = font5x3[char];
+      const charOriginX = startX + (charIndex * (letterWidth + letterSpacing));
+
       for (let r = 0; r < 5; r++) {
         for (let c = 0; c < 3; c++) {
           if (grid[r][c] === 1) {
             bricks.push({
-              x: currentX + (c * (pixelSize + 3)),
-              y: startY + (r * (pixelSize + 3)),
-              w: pixelSize + 1,
-              h: pixelSize + 1,
+              x: charOriginX + (c * (brickSize + brickGap)),
+              y: startY + (r * (brickSize + brickGap)),
+              w: brickSize,
+              h: brickSize,
               status: 1,
               color: (r % 2 === 0) ? "#00ffcc" : "#00aa66"
             });
           }
         }
       }
-      currentX += (3 * (pixelSize + 3)) + letterSpacing;
     });
 
     document.addEventListener("keydown", (e) => {
