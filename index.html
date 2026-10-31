@@ -96,7 +96,7 @@
         <p style="font-size:12px; color:#88ffb3; margin-top:2px;">Final Year BSc (Honours) Computing & IT • The Open University</p>
       </div>
       <div style="font-size:12px; text-align:right;">
-        STATUS: <span style="color:#00ff66; font-weight:bold;">READY</span>
+        STATUS: <span style="color:#00ff66; font-weight:bold;">DEFENCE ACTIVE</span>
       </div>
     </div>
     <div class="badge-bar">
@@ -122,35 +122,56 @@
 
     let ballX = canvas.width / 2;
     let ballY = canvas.height - 80;
-    let ballSpeed = 4.5;
-    let ballDX = 3.2;
-    let ballDY = -3.8;
+    let ballDX = 3.6;
+    let ballDY = -4.0;
     let ballRadius = 6;
 
     let score = 0;
     let gameOver = false;
     let victory = false;
 
-    // ASCII Bricks Matrix
-    const brickRows = 4;
-    const brickCols = 10;
-    const brickW = 68;
-    const brickH = 18;
-    const brickPadding = 6;
-    const offsetTop = 110;
-    const offsetLeft = 32;
+    // 5x3 Glyph Matrix spelling 'B 1 S C U 1 T'
+    const font5x3 = {
+      'B': [[1,1,0],[1,0,1],[1,1,0],[1,0,1],[1,1,0]],
+      '1': [[0,1,0],[1,1,0],[0,1,0],[0,1,0],[1,1,1]],
+      'S': [[0,1,1],[1,0,0],[0,1,0],[0,0,1],[1,1,0]],
+      'C': [[0,1,1],[1,0,0],[1,0,0],[1,0,0],[0,1,1]],
+      'U': [[1,0,1],[1,0,1],[1,0,1],[1,0,1],[0,1,0]],
+      'T': [[1,1,1],[0,1,0],[0,1,0],[0,1,0],[0,1,0]]
+    };
+
+    const word = ['B', '1', 'S', 'C', 'U', '1', 'T'];
+    const pixelSize = 13;
+    const letterSpacing = 28;
+    const startX = 40;
+    const startY = 110;
 
     const bricks = [];
-    for (let c = 0; c < brickCols; c++) {
-      bricks[c] = [];
-      for (let r = 0; r < brickRows; r++) {
-        bricks[c][r] = { x: 0, y: 0, status: 1 };
+
+    // Build ASCII-word bricks
+    let currentX = startX;
+    word.forEach((char) => {
+      const grid = font5x3[char];
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 3; c++) {
+          if (grid[r][c] === 1) {
+            bricks.push({
+              x: currentX + (c * (pixelSize + 3)),
+              y: startY + (r * (pixelSize + 3)),
+              w: pixelSize + 1,
+              h: pixelSize + 1,
+              status: 1,
+              color: (r % 2 === 0) ? "#00ffcc" : "#00aa66"
+            });
+          }
+        }
       }
-    }
+      currentX += (3 * (pixelSize + 3)) + letterSpacing;
+    });
 
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Right" || e.key === "ArrowRight" || e.key === "d" || e.key === "D") leftPressed = false, rightPressed = true;
-      if (e.key === "Left" || e.key === "ArrowLeft" || e.key === "a" || e.key === "A") rightPressed = false, leftPressed = true;
+      if (e.key === "Right" || e.key === "ArrowRight" || e.key === "d" || e.key === "D") { leftPressed = false; rightPressed = true; }
+      if (e.key === "Left" || e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { rightPressed = false; leftPressed = true; }
     });
 
     document.addEventListener("keyup", (e) => {
@@ -161,31 +182,25 @@
     canvas.addEventListener("mousemove", (e) => {
       const rect = canvas.getBoundingClientRect();
       const relativeX = (e.clientX - rect.left) * (canvas.width / rect.width);
-      if (relativeX > 0 && relativeX < canvas.width) {
-        playerX = relativeX - paddleW / 2;
-      }
+      if (relativeX > 0 && relativeX < canvas.width) playerX = relativeX - paddleW / 2;
     });
 
     canvas.addEventListener("touchmove", (e) => {
       const rect = canvas.getBoundingClientRect();
       const relativeX = (e.touches[0].clientX - rect.left) * (canvas.width / rect.width);
-      if (relativeX > 0 && relativeX < canvas.width) {
-        playerX = relativeX - paddleW / 2;
-      }
+      if (relativeX > 0 && relativeX < canvas.width) playerX = relativeX - paddleW / 2;
     });
 
     function collisionDetection() {
       let activeCount = 0;
-      for (let c = 0; c < brickCols; c++) {
-        for (let r = 0; r < brickRows; r++) {
-          const b = bricks[c][r];
-          if (b.status === 1) {
-            activeCount++;
-            if (ballX > b.x && ballX < b.x + brickW && ballY > b.y && ballY < b.y + brickH) {
-              ballDY = -ballDY;
-              b.status = 0;
-              score += 25;
-            }
+      for (let i = 0; i < bricks.length; i++) {
+        const b = bricks[i];
+        if (b.status === 1) {
+          activeCount++;
+          if (ballX > b.x && ballX < b.x + b.w && ballY > b.y && ballY < b.y + b.h) {
+            ballDY = -ballDY;
+            b.status = 0;
+            score += 25;
           }
         }
       }
@@ -199,31 +214,26 @@
       ctx.fillStyle = "#ff3355";
       ctx.shadowColor = "#ff3355";
       ctx.shadowBlur = 10;
-      ctx.fillRect(virusX, 20, paddleW, paddleH);
+      ctx.fillRect(virusX, 22, paddleW, paddleH);
 
       // Player Paddle (Firewall)
       ctx.fillStyle = "#00ff66";
       ctx.shadowColor = "#00ff66";
       ctx.shadowBlur = 10;
-      ctx.fillRect(playerX, canvas.height - 30, paddleW, paddleH);
+      ctx.fillRect(playerX, canvas.height - 32, paddleW, paddleH);
 
-      // Bricks
-      for (let c = 0; c < brickCols; c++) {
-        for (let r = 0; r < brickRows; r++) {
-          if (bricks[c][r].status === 1) {
-            const brickX = c * (brickW + brickPadding) + offsetLeft;
-            const brickY = r * (brickH + brickPadding) + offsetTop;
-            bricks[c][r].x = brickX;
-            bricks[c][r].y = brickY;
-            ctx.fillStyle = r % 2 === 0 ? "#00ffcc" : "#00aa66";
-            ctx.shadowColor = "#00ffcc";
-            ctx.shadowBlur = 6;
-            ctx.fillRect(brickX, brickY, brickW, brickH);
-          }
+      // Destructible ASCII Header Bricks
+      for (let i = 0; i < bricks.length; i++) {
+        const b = bricks[i];
+        if (b.status === 1) {
+          ctx.fillStyle = b.color;
+          ctx.shadowColor = b.color;
+          ctx.shadowBlur = 6;
+          ctx.fillRect(b.x, b.y, b.w, b.h);
         }
       }
 
-      // Ball
+      // Payload / Packet Ball
       ctx.beginPath();
       ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
       ctx.fillStyle = "#ffffff";
@@ -232,30 +242,31 @@
       ctx.fill();
       ctx.closePath();
 
-      // HUD
+      // Telemetry HUD
       ctx.shadowBlur = 0;
       ctx.font = "14px 'Courier New'";
       ctx.fillStyle = "#00ff66";
-      ctx.fillText(`AUDIT SCORE: ${score}`, 20, 480);
+      ctx.fillText(`AUDIT SCORE: ${score}`, 25, 485);
+      ctx.fillText(`TARGET: [B1SCU1T] HEADER`, 560, 485);
 
-      // AI movement tracking
+      // AI movement (Tracks ball)
       const targetAI = ballX - paddleW / 2;
-      virusX += (targetAI - virusX) * 0.055;
+      virusX += (targetAI - virusX) * 0.058;
 
-      // Ball bouncing logic
+      // Ball Wall Collisions
       if (ballX + ballDX > canvas.width - ballRadius || ballX + ballDX < ballRadius) {
         ballDX = -ballDX;
       }
 
-      // Top paddle bounce (Virus)
-      if (ballY + ballDY < 20 + paddleH + ballRadius && ballX > virusX && ballX < virusX + paddleW) {
+      // Ball / AI Paddle Collision
+      if (ballY + ballDY < 22 + paddleH + ballRadius && ballX > virusX && ballX < virusX + paddleW) {
         ballDY = Math.abs(ballDY);
       } else if (ballY + ballDY < ballRadius) {
         ballDY = -ballDY;
       }
 
-      // Player paddle bounce
-      if (ballY + ballDY > canvas.height - 30 - ballRadius && ballX > playerX && ballX < playerX + paddleW) {
+      // Ball / Player Paddle Collision
+      if (ballY + ballDY > canvas.height - 32 - ballRadius && ballX > playerX && ballX < playerX + paddleW) {
         ballDY = -Math.abs(ballDY);
       } else if (ballY + ballDY > canvas.height - ballRadius) {
         gameOver = true;
@@ -263,9 +274,9 @@
 
       collisionDetection();
 
-      // Player controls
-      if (rightPressed && playerX < canvas.width - paddleW) playerX += 7;
-      if (leftPressed && playerX > 0) playerX -= 7;
+      // Paddle Movement
+      if (rightPressed && playerX < canvas.width - paddleW) playerX += 7.5;
+      if (leftPressed && playerX > 0) playerX -= 7.5;
 
       if (!gameOver && !victory) {
         ballX += ballDX;
