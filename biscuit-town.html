@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biscuit Quest // Pallet Town</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #111413;
+      color: #9bbc0f;
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    /* Game Boy Shell */
+    .gb-chassis {
+      background: #8b8f97;
+      width: 360px;
+      padding: 24px 22px 34px 22px;
+      border-radius: 14px 14px 45px 14px;
+      box-shadow: 0 16px 30px rgba(0,0,0,0.7), inset 0 2px 4px #b8bcc4, inset -3px -3px 6px #5e626b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    /* Dark Screen Bezel */
+    .gb-bezel {
+      background: #6a6f7b;
+      width: 100%;
+      padding: 18px 18px 14px 18px;
+      border-radius: 8px 8px 30px 8px;
+      box-shadow: inset 0 3px 6px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .bezel-top {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 8px;
+      color: #8f95a3;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+    .battery-indicator {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 7px;
+      color: #b52222;
+    }
+    .battery-dot {
+      width: 7px;
+      height: 7px;
+      background: #ff2222;
+      border-radius: 50%;
+      box-shadow: 0 0 5px #ff2222;
+    }
+
+    /* DMG 4-shade Screen */
+    .screen-wrapper {
+      position: relative;
+      border: 3px solid #20242b;
+      border-radius: 4px;
+      background: #8b956d;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+    }
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+      width: 280px;
+      height: 252px;
+      background: #8bac0f;
+    }
+
+    /* Bottom Control Area */
+    .controls-deck {
+      width: 100%;
+      margin-top: 26px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+    }
+
+    /* D-PAD: Clean Cross without stray squares */
+    .dpad {
+      display: grid;
+      grid-template-columns: 28px 28px 28px;
+      grid-template-rows: 28px 28px 28px;
+      width: 84px;
+      height: 84px;
+    }
+    .dpad-btn {
+      background: #1c1d20;
+      box-shadow: inset 0 1px 2px #444, 0 3px 2px rgba(0,0,0,0.5);
+      cursor: pointer;
+      border: none;
+      outline: none;
+    }
+    .dpad-btn:active {
+      background: #0d0e10;
+      box-shadow: inset 0 2px 3px #000;
+    }
+    .dpad-up { grid-column: 2; grid-row: 1; border-radius: 4px 4px 0 0; }
+    .dpad-left { grid-column: 1; grid-row: 2; border-radius: 4px 0 0 4px; }
+    .dpad-center { grid-column: 2; grid-row: 2; background: #1c1d20; pointer-events: none; }
+    .dpad-right { grid-column: 3; grid-row: 2; border-radius: 0 4px 4px 0; }
+    .dpad-down { grid-column: 2; grid-row: 3; border-radius: 0 0 4px 4px; }
+
+    /* B1SCU1T BOY Retro Center Logo */
+    .retro-branding {
+      position: absolute;
+      left: 102px;
+      bottom: 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-style: italic;
+      user-select: none;
+      pointer-events: none;
+    }
+    .brand-main {
+      font-family: 'Arial Black', Impact, sans-serif;
+      font-size: 13px;
+      font-weight: 900;
+      color: #24296b;
+      letter-spacing: -0.5px;
+      text-shadow: 0.5px 0.5px 0px #fff;
+    }
+    .brand-sub {
+      font-family: 'Arial', sans-serif;
+      font-size: 8px;
+      font-weight: 900;
+      color: #8c1d40;
+      letter-spacing: 1.5px;
+      margin-top: -2px;
+    }
+
+    /* A / B Action Buttons */
+    .action-cluster {
+      display: flex;
+      gap: 14px;
+      transform: rotate(-24deg);
+      margin-right: 6px;
+    }
+    .btn-action-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .btn-action {
+      width: 36px;
+      height: 36px;
+      background: #8e1846;
+      border-radius: 50%;
+      box-shadow: inset 0 2px 2px #d43b74, 0 3px 4px rgba(0,0,0,0.5);
+      border: none;
+      cursor: pointer;
+      color: #fff;
+      font-weight: bold;
+      font-size
