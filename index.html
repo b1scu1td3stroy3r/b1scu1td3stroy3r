@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Biscuit Destroyer: Header Breach</title>
+  <title>b1scu1td3stroy3r: Header Breach</title>
   <style>
     * {
       box-sizing: border-box;
@@ -146,13 +146,8 @@
     const brickGap = 3;
     const letterSpacing = 28;
 
-    // Single letter width: 3 bricks + 2 internal gaps = 45px
     const letterWidth = (3 * brickSize) + (2 * brickGap);
-
-    // Total width of all 7 letters + 6 inter-letter spaces = 483px
     const totalWordWidth = (word.length * letterWidth) + ((word.length - 1) * letterSpacing);
-
-    // Exact horizontal centering on an 800px wide canvas (~158px margin on each side)
     const startX = Math.round((canvas.width - totalWordWidth) / 2);
     const startY = 115;
 
@@ -242,7 +237,7 @@
         }
       }
 
-      // Payload / Packet Ball
+      // Ball
       ctx.beginPath();
       ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
       ctx.fillStyle = "#ffffff";
@@ -251,14 +246,14 @@
       ctx.fill();
       ctx.closePath();
 
-      // Telemetry HUD
+      // HUD
       ctx.shadowBlur = 0;
       ctx.font = "14px 'Courier New'";
       ctx.fillStyle = "#00ff66";
       ctx.fillText(`AUDIT SCORE: ${score}`, 25, 485);
-      ctx.fillText(`TARGET: [B1SCU1T] HEADER`, 560, 485);
+      ctx.fillText(`TARGET: [b1scu1td3stroy3r]`, 530, 485);
 
-      // AI movement (Tracks ball)
+      // AI tracking
       const targetAI = ballX - paddleW / 2;
       virusX += (targetAI - virusX) * 0.058;
 
@@ -267,14 +262,14 @@
         ballDX = -ballDX;
       }
 
-      // Ball / AI Paddle Collision
+      // Top paddle bounce
       if (ballY + ballDY < 22 + paddleH + ballRadius && ballX > virusX && ballX < virusX + paddleW) {
         ballDY = Math.abs(ballDY);
       } else if (ballY + ballDY < ballRadius) {
         ballDY = -ballDY;
       }
 
-      // Ball / Player Paddle Collision
+      // Player paddle bounce
       if (ballY + ballDY > canvas.height - 32 - ballRadius && ballX > playerX && ballX < playerX + paddleW) {
         ballDY = -Math.abs(ballDY);
       } else if (ballY + ballDY > canvas.height - ballRadius) {
