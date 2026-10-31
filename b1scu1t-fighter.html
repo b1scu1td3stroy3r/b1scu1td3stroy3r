@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>B1SCU1T FIGHTER // Arcade Duel</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #080308;
+      color: #ffcc00;
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+
+    .arcade-cabinet {
+      width: 100%;
+      max-width: 840px;
+      border: 3px solid #ff3366;
+      background: #110515;
+      box-shadow: 0 0 30px rgba(255, 51, 102, 0.4), inset 0 0 20px rgba(255, 204, 0, 0.15);
+      border-radius: 8px;
+      position: relative;
+    }
+
+    .crt-screen::after {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04));
+      z-index: 20;
+      background-size: 100% 4px, 6px 100%;
+      pointer-events: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #15091c;
+      image-rendering: pixelated;
+    }
+
+    .exit-bar {
+      margin-top: 14px;
+      font-size: 11px;
+    }
+    .exit-bar a {
+      color: #00ff66;
+      text-decoration: none;
+    }
+    .exit-bar a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <div class="arcade-cabinet crt-screen">
+    <canvas id="gameCanvas" width="800" height="460"></canvas>
+  </div>
+
+  <div class="exit-bar">
+    <a href="index.html">&larr; Return to Arcade Hub</a>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    function playSfx(freq, duration, type='square', decay=true) {
+      if (!audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        if (decay) gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch(e) {}
+    }
+    function sfxHit() { playSfx(140, 0.12, 'sawtooth'); }
+    function sfxBlock() { playSfx(380, 0.08, 'triangle'); }
+    function sfxSpecial() { playSfx(750, 0.25, 'square'); }
+    function sfxDunk() {
+      [300, 220, 160, 110].forEach((f, i) => setTimeout(() => playSfx(f, 0.2, 'sawtooth'), i * 140));
+    }
+
+    const ROSTER = [
+      {
+        id: "jammy",
+        name: "THE JAMMY DODGER",
+        title: "Crimson Heart Assassin",
+        bodyColor: "#e6c280",
+        armorColor: "#cc1133",
+        accentColor: "#ffffff",
+        specialName: "JAMMY CORE EXPLOSION"
+      },
+      {
+        id: "custard",
+        name: "CUSTARD CREAM SUPREME",
+        title: "Baroque Vanilla Heavyweight",
+        bodyColor: "#f4e4a6",
+        armorColor: "#d9b852",
+        accentColor: "#fff8dc",
+        specialName: "ROYAL CREME SURGE"
+      },
+      {
+        id: "bourbon",
+        name: "BARON VON BOURBON",
+        title: "Choc-Fudge Shadow Monk",
+        bodyColor: "#593122",
+        armorColor: "#33160c",
+        accentColor: "#995533",
+        specialName: "DARK COCOA CRUSHER"
+      },
+      {
+        id: "gingernut",
+        name: "GINGER NUT BRAWLER",
+        title: "Spiced Street Striker",
+        bodyColor: "#b25f24",
+        armorColor: "#70350d",
+        accentColor: "#ff9933",
+        specialName: "SPICE SHOCKWAVE"
+      },
+      {
+        id: "shortbread",
+        name: "HIGHLAND SHORTBREAD",
+        title: "All-Butter Iron Paladin",
+        bodyColor: "#eed6a1",
+        armorColor: "#005522",
+        accentColor: "#cc0000",
+        specialName: "BUTTER CUTTER"
+      },
+      {
+        id: "destroyer",
+        name: "b1scu1td3stroy3r",
+        title: "Cybernetic Crumb Annihilator",
+        bodyColor: "#2a2d34",
+        armorColor: "#00ff66",
+        accentColor: "#ff0055",
+        specialName: "BYTECODE BUFFER OVERFLOW"
+      }
+    ];
+
+    let gameState = "SELECT";
+    let p1Index = 0;
+    let p2Index = 1;
+    let dunkTimer = 0;
+    let victoryMessage = "";
+    let globalFrame = 0;
+
+    let p1 = {
+      x: 180, y: 310, vx: 0, vy: 0,
+      hp: 30, maxHp: 30,
+      facing: 1, isGrounded: true, isBlocking: false,
+      state: "IDLE", attackTimer: 0, attackMax: 0,
+      hitStun: 0, flashTimer: 0, walkCycle: 0,
+      data: ROSTER[0]
+    };
+
+    let p2 = {
+      x: 580, y: 310, vx: 0, vy: 0,
+      hp: 30, maxHp: 30,
+      facing: -1, isGrounded: true, isBlocking: false,
+      state: "IDLE", attackTimer: 0, attackMax: 0,
+      hitStun: 0, flashTimer: 0, walkCycle: 0,
+      data: ROSTER[1]
+    };
+
+    const keys = {};
+    window.addEventListener("keydown", (e) => {
+      initAudio();
+      keys[e.key.toLowerCase()] = true;
+      if (gameState === "SELECT") {
+        if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") {
+          p1Index = (p1Index + 1) % ROSTER.length;
+          playSfx(440, 0.05);
+        }
+        if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") {
+          p1Index = (p1Index - 1 + ROSTER.length) % ROSTER.length;
+          playSfx(440, 0.05);
+        }
+        if (e.key === "Enter" || e.key === " " || e.key.toLowerCase() === "j") {
+          startFight();
+        }
+      }
+      if (gameState === "FINISHED" && (e.key === "Enter" || e.key === " " || e.key.toLowerCase() === "j")) {
+        resetToSelect();
+      }
+    });
+
+    window.addEventListener("keyup", (e) => {
+      keys[e.key.toLowerCase()] = false;
+    });
+
+    function startFight() {
+      let pool = [0, 1, 2, 3, 4, 5].filter(i => i !== p1Index);
+      p2Index = pool[Math.floor(Math.random() * pool.length)];
+
+      p1.data = ROSTER[p1Index];
+      p2.data = ROSTER[p2Index];
+      p1.hp = 30; p2.hp = 30;
+      p1.x = 180; p2.x = 580;
+      p1.y = 310; p2.y = 310;
+      p1.vx = 0; p2.vx = 0;
+      p1.state = "IDLE"; p2.state = "IDLE";
+      p1.facing = 1; p2.facing = -1;
+      p1.hitStun = 0; p2.hitStun = 0;
+      p1.flashTimer = 0; p2.flashTimer = 0;
+      gameState = "FIGHT";
+      playSfx(580, 0.3);
+    }
+
+    function resetToSelect() {
+      gameState = "SELECT";
+      playSfx(330, 0.1);
+    }
+
+    const particles = [];
+    function spawnSparks(x, y, color) {
+      for (let i = 0; i < 14; i++) {
+        particles.push({
+          x: x, y: y,
+          vx: (Math.random() - 0.5) * 10,
+          vy: (Math.random() - 0.5) * 10,
+          life: 22,
+          color: color
+        });
+      }
+    }
+
+    function drawUniqueFighter(f) {
+      const d = f.data;
+      const dir = f.facing;
+
+      ctx.save();
+      ctx.translate(f.x, f.y);
+      if (dir === -1) ctx.scale(-1, 1);
+
+      // Hit Reaction: Flinch backward & body tilt
+      if (f.hitStun > 0) {
+        ctx.rotate(-0.18);
+        ctx.translate(-8, 4);
+      }
+
+      // Idle Breathing Bob & Walk cycle
+      const idleBob = (f.state === "IDLE" && f.isGrounded) ? Math.sin(globalFrame * 0.12) * 2 : 0;
+      ctx.translate(0, idleBob);
+
+      // Shadow
+      ctx.fillStyle = "rgba(0,0,0,0.55)";
+      ctx.beginPath();
+      ctx.ellipse(0, 78 - idleBob, 32, 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Flash on hit (Damage reaction)
+      const isFlashing = f.flashTimer > 0 && Math.floor(f.flashTimer / 3) % 2 === 0;
+      const primaryColor = isFlashing ? "#ffffff" : d.bodyColor;
+      const armorColor = isFlashing ? "#ff3333" : d.armorColor;
+
+      // --- Character Body Models ---
+      if (d.id === "jammy") {
+        ctx.fillStyle = isFlashing ? "#ffffff" : "#8a0c24";
+        ctx.fillRect(-22, 12, 12, 48); // Cloak
+
+        ctx.fillStyle = primaryColor;
+        ctx.fillRect(-16, 12, 32, 44);
+        ctx.strokeStyle = armorColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-16, 12, 32, 44);
+
+        // Heart center
+        ctx.fillStyle = isFlashing ? "#ffffff" : "#cc1133";
+        ctx.beginPath();
+        ctx.arc(-3, 30, 6, 0, Math.PI * 2);
+        ctx.arc(3, 30, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = isFlashing ? "#ffffff" : "#cc1133";
+        ctx.fillRect(-12, -26, 24, 14); // Hood
+        ctx.fillStyle = isFlashing ? "#ff9999" : "#ffe0b2";
+        ctx.fillRect(-8, -14, 16, 12);
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, -9, 4, 3);
+
+        ctx.fillStyle = armorColor;
+        ctx.fillRect(-14, 56, 10, 22);
+        ctx.fillRect(4, 56, 10, 22);
+
+      } else if (d.id === "custard") {
+        ctx.fillStyle = primaryColor;
+        ctx.fillRect(-22, 8, 44, 48);
+        ctx.strokeStyle = armorColor;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(-22, 8, 44, 48);
+
+        ctx.fillStyle = armorColor;
+        ctx.fillRect(-16, 14, 32, 4);
+        ctx.fillRect(-16, 46, 32, 4);
+        ctx.fillStyle = isFlashing ? "#ffffff" : "#fff8dc";
+        ctx.fillRect(-10, 22, 20, 20);
+
+        ctx.fillStyle = armorColor;
+        ctx.fillRect(-16, -28, 32, 10); // Crown
+        ctx.fillRect(-16, -34, 6, 6);
+        ctx.fillRect(-3, -36, 6, 8);
+        ctx.fillRect(10, -34, 6, 6);
+
+        ctx.fillStyle = isFlashing ? "#ff9999" : "#ffe0b2";
+        ctx.fillRect(-10, -18, 20, 16);
+        ctx.fillStyle = "#000";
+        ctx.fillRect(1, -12, 4, 3);
+
+        ctx.fillStyle = armorColor;
+        ctx.fillRect(-18, 56, 14, 22);
+        ctx.fillRect(4, 56, 14, 22);
+
+      } else if (d.id === "bourbon") {
+        ctx.fillStyle = isFlashing ? "#ffffff" : "#33160c";
+        ctx.fillRect(-18, 10, 36, 48);
+
+        ctx.fillStyle = primaryColor;
+        ctx.fillRect(-14, 14, 28, 40);
+        ctx.fillStyle = armorColor;
+        for (let r = 0; r < 5; r++) {
+          ctx.fillRect(-8, 18 + (r * 6), 3, 3);
+          ctx.fillRect(5, 18 + (r * 6), 3, 3);
+        }
+
+        ctx.fillStyle = armorColor;
+        ctx.fillRect(-14, -28, 28, 18);
+        ctx.fillStyle = isFlashing ? "#ff0000" : "#ffcc00"; // Glowing eyes
+        ctx.fillRect(-4, -14, 4, 2);
+        ctx.fillRect(2, -14, 4, 2);
+
+        ctx.fillStyle = armorColor;
+        ctx.fillRect(-12, 58, 9, 20);
+        ctx.fillRect(3, 58, 9, 20);
+
+      } else if (d.id === "gingernut") {
+        ctx.fillStyle = primaryColor;
+        ctx.fillRect(-16, 12, 32, 42);
+
+        // Spiky Mohawk
+        ctx.fillStyle = isFlashing ? "#ffffff" : "#ff6600";
+        ctx.beginPath();
+        ctx.moveTo(-10, -18); ctx.lineTo(-12, -32); ctx.lineTo(-4, -20);
+        ctx.lineTo(0, -36); ctx.lineTo(4, -20); ctx.lineTo(10, -32); ctx.lineTo(8, -18);
+        ctx.fill();
+
+        ctx.fillStyle = isFlashing ? "#ff9999" : "#ffd59e";
+        ctx.fillRect(-8, -18, 16, 16);
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, -12, 4, 3);
+
+        ctx.fillStyle = armorColor;
+        ctx.fillRect(-14, 54, 10, 24);
+        ctx.fillRect(4, 54, 10, 24);
+
+      } else if (d.id === "shortbread") {
+        ctx.fillStyle = primaryColor;
+        ctx.fillRect(-16, 10, 32, 44);
+        ctx.strokeStyle = armorColor;
+        ctx.strokeRect(-16, 10, 32, 44);
+
+        ctx.fillStyle = isFlashing ? "#ffffff" : "#cc0000";
+        ctx.fillRect(-18, 12, 36, 8); // Sash
+
+        ctx.fillStyle = isFlashing ? "#ffffff" : "#005522";
+        ctx.fillRect(-16, -26, 32, 10);
+        ctx.fillStyle = "#cc0000";
+        ctx.fillRect(-2, -32, 6, 6);
+
+        ctx.fillStyle = isFlashing ? "#ff9999" : "#ffe0b2";
+        ctx.fillRect(-8, -16, 16, 14);
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, -10, 4, 3);
+
+        ctx.fillStyle = armorColor;
+        ctx.fillRect(-12, 66, 8, 12);
+        ctx.fillRect(4, 66, 8, 12);
+
+      } else if (d.id === "destroyer") {
+        ctx.fillStyle = primaryColor;
+        ctx.fillRect(-18, 10, 36, 44);
+        ctx.strokeStyle = armorColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-18, 10, 36, 44);
+
+        ctx.fillStyle = isFlashing ? "#ffffff" : "#00ff66";
+        ctx.fillRect(-12, 16, 8, 2);
+        ctx.fillRect(-6, 16, 2, 10);
+
+        ctx.fillStyle = "#111317";
+        ctx.fillRect(-12, -28, 24, 18);
+        ctx.fillStyle = isFlashing ? "#ffffff" : "#00ff66";
+        ctx.fillRect(-6, -18, 14, 4);
+
+        ctx.fillStyle = armorColor;
+        ctx.fillRect(-14, 54, 10, 24);
+        ctx.fillRect(4, 54, 10, 24);
+      }
+
+      // --- DYNAMIC COMBAT ANIMATIONS ---
+      ctx.fillStyle = armorColor;
+
+      if (f.state === "PUNCH") {
+        const progress = 1 - (f.attackTimer / f.attackMax);
+        // Wind-up retract, then snap-thrust extension
+        const extend = progress < 0.3 ? -6 : Math.sin(progress * Math.PI) * 44;
+        ctx.fillRect(8, 22, 14 + extend, 12);
+        ctx.fillStyle = "#ffe0b2";
+        ctx.fillRect(18 + extend, 20, 12, 16); // Fist
+
+        // Impact lines on full extension
+        if (progress >= 0.4 && progress <= 0.8) {
+          ctx.strokeStyle = "#ffff00";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(34 + extend, 16); ctx.lineTo(46 + extend, 12);
+          ctx.moveTo(34 + extend, 38); ctx.lineTo(46 + extend, 42);
+          ctx.stroke();
+        }
+
+      } else if (f.state === "KICK") {
+        const progress = 1 - (f.attackTimer / f.attackMax);
+        const legReach = progress < 0.25 ? 4 : Math.sin(progress * Math.PI) * 48;
+        ctx.fillRect(6, 46, 16 + legReach, 14);
+        ctx.fillStyle = armorColor;
+        ctx.fillRect(18 + legReach, 42, 14, 18); // Flying boot
+
+      } else if (f.state === "SPECIAL") {
+        const progress = 1 - (f.attackTimer / f.attackMax);
+        if (progress < 0.35) {
+          // Charge stance: Shaking with energy gather
+          const shake = (Math.random() - 0.5) * 4;
+          ctx.fillStyle = d.accentColor;
+          ctx.beginPath();
+          ctx.arc(10 + shake, 24, 14, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Blast eruption
+          const blastLen = Math.min(180, (progress - 0.35) * 400);
+          ctx.fillStyle = d.accentColor;
+          ctx.shadowColor = d.accentColor;
+          ctx.shadowBlur = 14;
+          ctx.fillRect(18, 16, blastLen, 22);
+          ctx.shadowBlur = 0;
+        }
+
+      } else if (f.isBlocking) {
+        // Crossed defensive forearms
+        ctx.fillStyle = armorColor;
+        ctx.fillRect(6, 12, 12, 38);
+        ctx.fillStyle = primaryColor;
+        ctx.fillRect(14, 18, 10, 28);
+
+      } else if (f.hitStun > 0) {
+        // Reeling Arms
+        ctx.fillRect(-18, 16, 10, 24);
+        ctx.fillRect(8, 8, 10, 24);
+
+      } else {
+        // Natural arm sway
+        const armSway = (f.vx !== 0) ? Math.sin(f.walkCycle) * 8 : 0;
+        ctx.fillRect(6 + armSway, 20, 12, 22);
+      }
+
+      // Dizzy Stars if in DUNK HIM state
+      if (gameState === "DUNK_HIM" && f.hp <= 0) {
+        const starAngle = globalFrame * 0.15;
+        const starX = Math.cos(starAngle) * 22;
+        const starY = Math.sin(starAngle) * 8 - 36;
+        ctx.fillStyle = "#ffff00";
+        ctx.font = "14px 'Courier New'";
+        ctx.fillText("★", starX - 4, starY);
+        ctx.fillText("★", -starX - 4, -starY - 72);
+      }
+
+      ctx.restore();
+    }
+
+    function checkHit(attacker, defender, damage, range) {
+      const distance = Math.abs(attacker.x - defender.x);
+      const aligned = (attacker.facing === 1 && attacker.x < defender.x) || (attacker.facing === -1 && attacker.x > defender.x);
+
+      if (distance < range && aligned) {
+        if (defender.isBlocking) {
+          defender.hp = Math.max(0, defender.hp - 1);
+          defender.x += attacker.facing * 4; // Minor block knockback
+          spawnSparks(defender.x, defender.y + 20, "#ffff00");
+          sfxBlock();
+        } else {
+          defender.hp = Math.max(0, defender.hp - damage);
+          // Hit reaction: stun, knockback & flash
+          defender.hitStun = 14;
+          defender.flashTimer = 12;
+          defender.x += attacker.facing * 18; // Heavy flinch knockback
+          defender.vy = -3; // Small flinch hop
+          spawnSparks(defender.x, defender.y + 20, attacker.data.accentColor);
+          sfxHit();
+        }
+
+        if (defender.hp <= 0 && gameState === "FIGHT") {
+          gameState = "DUNK_HIM";
+          dunkTimer = 180;
+          sfxDunk();
+          victoryMessage = `${attacker.data.name} DUNKS THE ENEMY!`;
+        }
+      }
+    }
+
+    function updateFighter(f, isP1) {
+      f.vy += 0.8;
+      f.y += f.vy;
+      if (f.y >= 310) {
+        f.y = 310;
+        f.vy = 0;
+        f.isGrounded = true;
+      } else {
+        f.isGrounded = false;
+      }
+
+      // Hit Stun & Flash Timers
+      if (f.hitStun > 0) {
+        f.hitStun--;
+        if (f.hitStun === 0 && f.state === "HIT") f.state = "IDLE";
+      }
+      if (f.flashTimer > 0) f.flashTimer--;
+
+      // Attack Animation Timer
+      if (f.attackTimer > 0) {
+        f.attackTimer--;
+        if (f.attackTimer === 0) f.state = "IDLE";
+      }
+
+      // Player 1 controls
+      if (isP1 && gameState === "FIGHT") {
+        f.isBlocking = (keys["s"] || keys["arrowdown"]) && f.attackTimer === 0;
+
+        if (f.attackTimer === 0 && f.hitStun === 0) {
+          f.vx = 0;
+          if ((keys["a"] || keys["arrowleft"]) && f.x > 60) {
+            f.x -= 4.2;
+            f.vx = -4.2;
+            f.walkCycle += 0.3;
+          }
+          if ((keys["d"] || keys["arrowright"]) && f.x < 740) {
+            f.x += 4.2;
+            f.vx = 4.2;
+            f.walkCycle += 0.3;
+          }
+
+          if ((keys["w"] || keys["arrowup"]) && f.isGrounded) {
+            f.vy = -15;
+            f.isGrounded = false;
+            playSfx(280, 0.1);
+          }
+
+          if (keys["j"]) {
+            f.state = "PUNCH";
+            f.attackTimer = 14;
+            f.attackMax = 14;
+            checkHit(p1, p2, 3, 68);
+            playSfx(420, 0.08);
+          } else if (keys["k"]) {
+            f.state = "KICK";
+            f.attackTimer = 18;
+            f.attackMax = 18;
+            checkHit(p1, p2, 5, 80);
+            playSfx(320, 0.1);
+          } else if (keys["l"]) {
+            f.state = "SPECIAL";
+            f.attackTimer = 26;
+            f.attackMax = 26;
+            checkHit(p1, p2, 8, 120);
+            sfxSpecial();
+          }
+        }
+      }
+
+      // AI Opponent Controls
+      if (!isP1 && gameState === "FIGHT") {
+        const dist = f.x - p1.x;
+        f.facing = dist > 0 ? -1 : 1;
+
+        if (f.attackTimer === 0 && f.hitStun === 0) {
+          if (Math.abs(dist) > 75) {
+            f.x += dist > 0 ? -2.8 : 2.8;
+            f.vx = dist > 0 ? -2.8 : 2.8;
+            f.walkCycle += 0.25;
+          } else {
+            f.vx = 0;
+            const action = Math.random();
+            if (action < 0.04) {
+              f.state = "PUNCH";
+              f.attackTimer = 16;
+              f.attackMax = 16;
+              checkHit(p2, p1, 3, 68);
+            } else if (action < 0.07) {
+              f.state = "KICK";
+              f.attackTimer = 20;
+              f.attackMax = 20;
+              checkHit(p2, p1, 5, 80);
+            } else if (action < 0.09) {
+              f.state = "SPECIAL";
+              f.attackTimer = 28;
+              f.attackMax = 28;
+              checkHit(p2, p1, 8, 120);
+            } else if (action < 0.15) {
+              f.isBlocking = true;
+            } else {
+              f.isBlocking = false;
+            }
+          }
+        }
+      }
+
+      if (isP1 && f.attackTimer === 0) {
+        f.facing = p1.x < p2.x ? 1 : -1;
+      }
+    }
+
+    function renderHUD() {
+      ctx.fillStyle = "#ffcc00";
+      ctx.font = "bold 13px 'Courier New'";
+      ctx.fillText(p1.data.name, 40, 36);
+
+      ctx.fillStyle = "#330011";
+      ctx.fillRect(40, 44, 280, 20);
+      const p1Ratio = Math.max(0, p1.hp / p1.maxHp);
+      ctx.fillStyle = p1.hp > 10 ? "#00ff66" : "#ff3333";
+      ctx.fillRect(40, 44, 280 * p1Ratio, 20);
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(40, 44, 280, 20);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 12px 'Courier New'";
+      ctx.fillText(`HP: ${p1.hp}/30`, 50, 58);
+
+      ctx.fillStyle = "#ffcc00";
+      ctx.textAlign = "right";
+      ctx.fillText(p2.data.name, 760, 36);
+
+      ctx.fillStyle = "#330011";
+      ctx.fillRect(480, 44, 280, 20);
+      const p2Ratio = Math.max(0, p2.hp / p2.maxHp);
+      ctx.fillStyle = p2.hp > 10 ? "#00ff66" : "#ff3333";
+      ctx.fillRect(480 + (280 * (1 - p2Ratio)), 44, 280 * p2Ratio, 20);
+      ctx.strokeRect(480, 44, 280, 20);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(`HP: ${p2.hp}/30`, 750, 58);
+      ctx.textAlign = "left";
+
+      ctx.fillStyle = "#ff0066";
+      ctx.font = "bold 16px 'Courier New'";
+      ctx.fillText("VS", 388, 58);
+
+      // Bottom Command HUD
+      ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+      ctx.fillRect(0, 428, canvas.width, 32);
+      ctx.strokeStyle = "#ff3366";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0, 428, canvas.width, 32);
+
+      ctx.textAlign = "center";
+      ctx.font = "bold 11px 'Courier New'";
+      ctx.fillStyle = "#00ff66";
+      ctx.fillText("[A]/[D] MOVE  |  [W] JUMP  |  [S] BLOCK  |  [J] PUNCH (3)  |  [K] KICK (5)  |  [L] SPECIAL (8)", canvas.width / 2, 448);
+      ctx.textAlign = "left";
+    }
+
+    function renderCharacterSelect() {
+      ctx.fillStyle = "#0c0314";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "#ffcc00";
+      ctx.font = "bold 26px 'Courier New'";
+      ctx.textAlign = "center";
+      ctx.fillText("B1SCU1T FIGHTER", canvas.width / 2, 45);
+
+      ctx.font = "13px 'Courier New'";
+      ctx.fillStyle = "#ff6699";
+      ctx.fillText("CHOOSE YOUR CRUMB WARRIOR [A/D or Arrows] - PRESS [ENTER]", canvas.width / 2, 70);
+
+      const startX = 64;
+      const cardW = 104;
+      const cardH = 145;
+
+      ROSTER.forEach((c, idx) => {
+        const cx = startX + (idx * 114);
+        const cy = 100;
+
+        if (idx === p1Index) {
+          ctx.strokeStyle = "#00ff66";
+          ctx.lineWidth = 4;
+          ctx.strokeRect(cx - 3, cy - 3, cardW + 6, cardH + 6);
+          ctx.fillStyle = "rgba(0, 255, 102, 0.15)";
+          ctx.fillRect(cx - 3, cy - 3, cardW + 6, cardH + 6);
+        } else {
+          ctx.strokeStyle = "#442255";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(cx, cy, cardW, cardH);
+        }
+
+        ctx.fillStyle = c.bodyColor;
+        ctx.fillRect(cx + 18, cy + 18, cardW - 36, 46);
+        ctx.fillStyle = c.armorColor;
+        ctx.fillRect(cx + 28, cy + 28, cardW - 56, 26);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 10px 'Courier New'";
+        ctx.fillText(c.name.split(" ")[0], cx + (cardW / 2), cy + 95);
+        ctx.fillStyle = "#ffcc00";
+        ctx.font = "8px 'Courier New'";
+        ctx.fillText(`[${idx + 1}]`, cx + (cardW / 2), cy + 120);
+      });
+
+      const cur = ROSTER[p1Index];
+      ctx.fillStyle = "#20082c";
+      ctx.fillRect(100, 270, 600, 130);
+      ctx.strokeStyle = "#ff0066";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(100, 270, 600, 130);
+
+      ctx.fillStyle = "#ffcc00";
+      ctx.font = "bold 17px 'Courier New'";
+      ctx.textAlign = "left";
+      ctx.fillText(cur.name, 124, 305);
+      ctx.font = "12px 'Courier New'";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(`CLASS: ${cur.title}`, 124, 335);
+      ctx.fillStyle = "#00ff66";
+      ctx.fillText(`SPECIAL MOVE: [L] ${cur.specialName}`, 124, 368);
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#ff99bb";
+      ctx.font = "11px 'Courier New'";
+      ctx.fillText("CONTROLS: [A/D] Select Fighter  |  [ENTER] or [J] Begin Match", canvas.width / 2, 435);
+      ctx.textAlign = "left";
+    }
+
+    function renderStage() {
+      ctx.fillStyle = "#22081f";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "#4a1236";
+      ctx.beginPath();
+      ctx.arc(400, 220, 130, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#422817";
+      ctx.fillRect(0, 380, canvas.width, 48);
+      ctx.fillStyle = "#5c3720";
+      ctx.fillRect(0, 380, canvas.width, 8);
+
+      ctx.strokeStyle = "#2b160b";
+      ctx.lineWidth = 2;
+      for (let x = 0; x < canvas.width; x += 50) {
+        ctx.beginPath();
+        ctx.moveTo(x, 388);
+        ctx.lineTo(x, 428);
+        ctx.stroke();
+      }
+    }
+
+    function gameLoop() {
+      globalFrame++;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (gameState === "SELECT") {
+        renderCharacterSelect();
+      } else {
+        renderStage();
+
+        updateFighter(p1, true);
+        updateFighter(p2, false);
+
+        drawUniqueFighter(p1);
+        drawUniqueFighter(p2);
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const pt = particles[i];
+          pt.x += pt.vx;
+          pt.y += pt.vy;
+          pt.life--;
+          ctx.fillStyle = pt.color;
+          ctx.fillRect(pt.x, pt.y, 4, 4);
+          if (pt.life <= 0) particles.splice(i, 1);
+        }
+
+        renderHUD();
+
+        if (gameState === "DUNK_HIM") {
+          dunkTimer--;
+
+          ctx.fillStyle = "rgba(0,0,0,0.45)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          ctx.textAlign = "center";
+          ctx.font = "bold 56px 'Courier New'";
+          ctx.fillStyle = (Math.floor(Date.now() / 150) % 2 === 0) ? "#ff0033" : "#ffcc00";
+          ctx.shadowColor = "#ff0033";
+          ctx.shadowBlur = 20;
+          ctx.fillText("DUNK HIM!", canvas.width / 2, 210);
+          ctx.shadowBlur = 0;
+
+          ctx.font = "bold 16px 'Courier New'";
+          ctx.fillStyle = "#ffffff";
+          ctx.fillText("PRESS [J], [K] OR [L] FOR THE FATAL CRUMB DUNK!", canvas.width / 2, 255);
+
+          if (keys["j"] || keys["k"] || keys["l"] || dunkTimer <= 0) {
+            gameState = "FINISHED";
+            sfxSpecial();
+          }
+        } else if (gameState === "FINISHED") {
+          ctx.fillStyle = "rgba(0,0,0,0.88)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          ctx.textAlign = "center";
+          ctx.font = "bold 34px 'Courier New'";
+          ctx.fillStyle = "#00ff66";
+          ctx.fillText("CRUMB-TASTIC KNOCKOUT!", canvas.width / 2, 175);
+
+          ctx.font = "18px 'Courier New'";
+          ctx.fillStyle = "#ffcc00";
+          ctx.fillText(victoryMessage, canvas.width / 2, 220);
+
+          ctx.font = "bold 15px 'Courier New'";
+          ctx.fillStyle = "#ffffff";
+          if (Math.floor(Date.now() / 400) % 2 === 0) {
+            ctx.fillText("> PRESS [ENTER] TO RETURN TO CHARACTER SELECT <", canvas.width / 2, 290);
+          } else {
+            ctx.fillText("  PRESS [ENTER] TO RETURN TO CHARACTER SELECT  ", canvas.width / 2, 290);
+          }
+
+          ctx.font = "12px 'Courier New'";
+          ctx.fillStyle = "#88ffb3";
+          ctx.fillText("Choose a new fighter and opponent for the next match!", canvas.width / 2, 325);
+        }
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>
