@@ -29,7 +29,7 @@ Final-year **BSc (Honours) Computing & IT** student at **The Open University**, 
 - 📜 **Verified Credentials:** [Credly Profile](https://www.credly.com/users/terry_white)
 - 🚩 **Offensive Labs:** [Hack The Box Profile](https://app.hackthebox.com/public/users/2571595)
 - ⏱️ **Competitive CTF:** [CTFtime Profile](https://ctftime.org/user/237405)
-- ☕ **Core Foundations:** Java (OOP, Generics, Object Serialization) — [Codecademy](https://www.codecademy.com/users/b1scu1td3stroy3r/achievements)
+- ☕ **Core Foundations:** Java (OOP, Generics, Object Serialization) — [Codecademy Profile](https://www.codecademy.com/users/b1scu1td3stroy3r/achievements)
 ---
 
 ### 🍪 Featured Tooling & Research Labs
