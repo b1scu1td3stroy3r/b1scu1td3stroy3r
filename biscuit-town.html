@@ -283,4 +283,552 @@
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    const C0 = "#
+    const C0 = "#9bbc0f";
+    const C1 = "#8bac0f";
+    const C2 = "#306230";
+    const C3 = "#0f380f";
+
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    function playTone(freq, duration, type = 'square') {
+      if (!audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch(e) {}
+    }
+    function sfxBeep() { playTone(880, 0.08); }
+    function sfxItem() { playTone(587, 0.06); setTimeout(() => playTone(880, 0.14), 60); }
+    function sfxHit() { playTone(160, 0.12, 'sawtooth'); }
+    function sfxVictory() {
+      [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => playTone(f, 0.15), i * 120));
+    }
+
+    let mode = "TITLE";
+    let playerName = "TERRY";
+    let playerGender = "BOY";
+    let playerX = 4, playerY = 6;
+    let playerDir = "DOWN";
+
+    const biscuitsCollected = {
+      shortbread: false,
+      custard: false,
+      bourbon: false,
+      ginger: false,
+      jammy: false
+    };
+
+    let dialogLines = [];
+    let dialogIndex = 0;
+    let pendingCallback = null;
+
+    let playerHp = 100;
+    let bossHp = 100;
+    let battleTurn = "PLAYER";
+    let battleLog = "";
+    let battleSubLog = "";
+
+    const MAP_W = 14, MAP_H = 12;
+    const map = [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,0,0,1,1,0,0,0,0,0,1],
+      [1,0,3,3,3,0,1,1,0,3,3,3,0,1],
+      [1,0,3,3,3,0,0,0,0,3,3,3,0,1],
+      [1,0,2,2,2,0,0,0,0,2,2,2,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,2,2,2,2,0,0,2,2,2,2,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,4,4,4,0,0,0,0,0,0,4,4,4,1],
+      [1,4,4,4,0,0,0,0,0,0,4,4,4,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+
+    const npcs = [
+      {
+        x: 8, y: 5, dir: "DOWN", name: "Youngster",
+        talk: () => ["I like shorts.", "They're comfy and", "easy to wear!"]
+      },
+      {
+        x: 3, y: 5, dir: "DOWN", name: "Oak",
+        talk: () => {
+          const count = Object.values(biscuitsCollected).filter(Boolean).length;
+          if (count < 5) return ["OAK: Search town", "for all 5 biscuits!", `Found: ${count}/5.`];
+          return ["OAK: Magnificent!", "Go south to face", "b1scu1td3stroy3r!"];
+        }
+      },
+      {
+        x: 6, y: 9, dir: "UP", name: "b1scu1td3stroy3r",
+        talk: () => {
+          const count = Object.values(biscuitsCollected).filter(Boolean).length;
+          if (count >= 5) {
+            startBattle();
+            return ["I challenge you", "to a Biscuit Duel!"];
+          }
+          return ["I await a worthy", "challenger who has", "found all 5 biscuits."];
+        }
+      }
+    ];
+
+    const biscuitItems = [
+      { id: "shortbread", name: "Shortbread", x: 1, y: 1 },
+      { id: "custard", name: "Custard Cream", x: 12, y: 1 },
+      { id: "bourbon", name: "Bourbon", x: 1, y: 8 },
+      { id: "ginger", name: "Ginger Nut", x: 12, y: 8 },
+      { id: "jammy", name: "Jammy Dodger", x: 6, y: 3 }
+    ];
+
+    function getBiscuitCount() {
+      return Object.values(biscuitsCollected).filter(Boolean).length;
+    }
+
+    function drawTile(tile, tx, ty) {
+      const px = tx * 16, py = ty * 16;
+      if (tile === 0) {
+        ctx.fillStyle = C1;
+        ctx.fillRect(px, py, 16, 16);
+        ctx.fillStyle = C0;
+        ctx.fillRect(px + 4, py + 4, 2, 2);
+        ctx.fillRect(px + 10, py + 11, 2, 2);
+      } else if (tile === 1) {
+        ctx.fillStyle = C3;
+        ctx.fillRect(px, py, 16, 16);
+        ctx.fillStyle = C2;
+        ctx.fillRect(px + 2, py + 2, 12, 12);
+        ctx.fillStyle = C1;
+        ctx.fillRect(px + 4, py + 4, 8, 8);
+      } else if (tile === 2) {
+        ctx.fillStyle = C1;
+        ctx.fillRect(px, py, 16, 16);
+        ctx.fillStyle = C3;
+        ctx.fillRect(px, py + 6, 16, 3);
+        ctx.fillRect(px + 3, py + 2, 3, 12);
+        ctx.fillRect(px + 10, py + 2, 3, 12);
+      } else if (tile === 3) {
+        ctx.fillStyle = C3;
+        ctx.fillRect(px, py, 16, 16);
+        ctx.fillStyle = C2;
+        ctx.fillRect(px + 1, py + 1, 14, 14);
+        ctx.fillStyle = C3;
+        ctx.fillRect(px + 3, py + 5, 10, 2);
+      } else if (tile === 4) {
+        ctx.fillStyle = C2;
+        ctx.fillRect(px, py, 16, 16);
+        ctx.fillStyle = C1;
+        ctx.fillRect(px + 2, py + 4, 6, 2);
+        ctx.fillRect(px + 7, py + 10, 6, 2);
+      }
+    }
+
+    function drawSprite(x, y, color, hat = false, female = false) {
+      const px = x * 16, py = y * 16;
+      ctx.fillStyle = color;
+      ctx.fillRect(px + 5, py + 2, 6, 6);
+      if (female) {
+        ctx.fillStyle = C3;
+        ctx.fillRect(px + 3, py + 3, 2, 5);
+        ctx.fillRect(px + 11, py + 3, 2, 5);
+        ctx.fillStyle = color;
+      }
+      if (hat) {
+        ctx.fillStyle = C3;
+        ctx.fillRect(px + 4, py + 1, 8, 2);
+        ctx.fillStyle = color;
+      }
+      ctx.fillStyle = C0;
+      ctx.fillRect(px + 6, py + 4, 1, 2);
+      ctx.fillRect(px + 9, py + 4, 1, 2);
+      ctx.fillStyle = color;
+      ctx.fillRect(px + 4, py + 8, 8, 5);
+      ctx.fillStyle = C3;
+      ctx.fillRect(px + 5, py + 13, 2, 3);
+      ctx.fillRect(px + 9, py + 13, 2, 3);
+    }
+
+    function drawDialogBox(lines) {
+      ctx.fillStyle = C0;
+      ctx.fillRect(4, 96, 152, 44);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = C3;
+      ctx.strokeRect(4, 96, 152, 44);
+
+      ctx.fillStyle = C3;
+      ctx.font = "8px 'Courier New', monospace";
+      lines.slice(0, 3).forEach((line, i) => {
+        ctx.fillText(line, 10, 110 + (i * 10));
+      });
+      if (Math.floor(Date.now() / 400) % 2 === 0) {
+        ctx.fillText("▼", 144, 134);
+      }
+    }
+
+    function renderTitle() {
+      ctx.fillStyle = C0;
+      ctx.fillRect(0, 0, 160, 144);
+      ctx.fillStyle = C3;
+      ctx.font = "12px 'Courier New', monospace";
+      ctx.fillText("BISCUIT QUEST", 26, 36);
+      ctx.font = "8px 'Courier New', monospace";
+      ctx.fillText("RED / BLUE EDITION", 22, 50);
+
+      ctx.fillStyle = C2;
+      ctx.fillRect(68, 64, 24, 24);
+      ctx.fillStyle = C1;
+      ctx.fillRect(72, 68, 16, 16);
+      ctx.fillStyle = C3;
+      ctx.fillRect(76, 74, 3, 3);
+      ctx.fillRect(82, 78, 3, 3);
+
+      ctx.font = "8px 'Courier New', monospace";
+      if (Math.floor(Date.now() / 500) % 2 === 0) {
+        ctx.fillText("PRESS [A] OR START", 20, 118);
+      }
+    }
+
+    function renderGenderSelect() {
+      ctx.fillStyle = C0;
+      ctx.fillRect(0, 0, 160, 144);
+      ctx.fillStyle = C3;
+      ctx.font = "9px 'Courier New', monospace";
+      ctx.fillText("Are you a BOY", 30, 34);
+      ctx.fillText("or a GIRL?", 46, 46);
+
+      drawSprite(3, 4, C3, true, false);
+      drawSprite(6, 4, C2, false, true);
+
+      ctx.fillText(playerGender === "BOY" ? "> BOY" : "  BOY", 44, 94);
+      ctx.fillText(playerGender === "GIRL" ? "> GIRL" : "  GIRL", 44, 108);
+
+      ctx.font = "7px 'Courier New', monospace";
+      ctx.fillText("[UP/DOWN] Choose  [A] Select", 14, 132);
+    }
+
+    function renderOverworld() {
+      for (let y = 0; y < MAP_H; y++) {
+        for (let x = 0; x < MAP_W; x++) {
+          drawTile(map[y][x], x, y);
+        }
+      }
+
+      biscuitItems.forEach(b => {
+        if (!biscuitsCollected[b.id]) {
+          const px = b.x * 16, py = b.y * 16;
+          ctx.fillStyle = C2;
+          ctx.fillRect(px + 4, py + 4, 8, 8);
+          ctx.fillStyle = C0;
+          ctx.fillRect(px + 6, py + 6, 4, 4);
+        }
+      });
+
+      npcs.forEach(npc => {
+        let col = C3;
+        if (npc.name === "Youngster") col = C2;
+        if (npc.name === "b1scu1td3stroy3r") col = C3;
+        drawSprite(npc.x, npc.y, col, npc.name === "Youngster");
+      });
+
+      drawSprite(playerX, playerY, C3, playerGender === "BOY", playerGender === "GIRL");
+
+      ctx.fillStyle = C0;
+      ctx.fillRect(0, 0, 160, 14);
+      ctx.fillStyle = C3;
+      ctx.font = "8px 'Courier New', monospace";
+      ctx.fillText(`BISCUITS: ${getBiscuitCount()}/5`, 6, 10);
+      ctx.fillText(playerName, 110, 10);
+
+      if (mode === "DIALOG") {
+        drawDialogBox(dialogLines);
+      }
+    }
+
+    function renderBattle() {
+      ctx.fillStyle = C0;
+      ctx.fillRect(0, 0, 160, 144);
+
+      ctx.fillStyle = C3;
+      ctx.fillRect(10, 12, 70, 24);
+      ctx.fillStyle = C0;
+      ctx.fillRect(12, 14, 66, 20);
+      ctx.fillStyle = C3;
+      ctx.font = "7px 'Courier New', monospace";
+      ctx.fillText("b1scu1td3stroy3r", 14, 22);
+      ctx.fillText(`HP: ${bossHp}/100`, 14, 30);
+
+      ctx.fillStyle = C3;
+      ctx.fillRect(100, 14, 44, 36);
+      ctx.fillStyle = C2;
+      ctx.fillRect(106, 20, 32, 24);
+      ctx.fillStyle = C0;
+      ctx.fillRect(112, 24, 6, 4);
+      ctx.fillRect(124, 24, 6, 4);
+
+      ctx.fillStyle = C3;
+      ctx.fillRect(80, 58, 70, 24);
+      ctx.fillStyle = C0;
+      ctx.fillRect(82, 60, 66, 20);
+      ctx.fillStyle = C3;
+      ctx.fillText(playerName, 84, 68);
+      ctx.fillText(`HP: ${playerHp}/100`, 84, 76);
+
+      ctx.fillStyle = C3;
+      ctx.fillRect(18, 56, 32, 32);
+      ctx.fillStyle = C2;
+      ctx.fillRect(22, 60, 24, 24);
+
+      ctx.fillStyle = C0;
+      ctx.fillRect(4, 94, 152, 46);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = C3;
+      ctx.strokeRect(4, 94, 152, 46);
+
+      ctx.fillStyle = C3;
+      ctx.font = "8px 'Courier New', monospace";
+
+      if (battleTurn === "PLAYER") {
+        ctx.fillText(battleLog || "What will TERRY do?", 10, 108);
+        ctx.fillText("[A] CRUNCH  [B] DEFEND", 10, 124);
+      } else if (battleTurn === "BOSS") {
+        ctx.fillText(battleLog, 10, 108);
+        ctx.fillText(battleSubLog, 10, 122);
+      } else if (battleTurn === "END") {
+        ctx.fillText(battleLog, 10, 108);
+        ctx.fillText("[A] Continue", 10, 124);
+      }
+    }
+
+    function renderVictory() {
+      ctx.fillStyle = C0;
+      ctx.fillRect(0, 0, 160, 144);
+
+      ctx.fillStyle = C3;
+      ctx.font = "9px 'Courier New', monospace";
+      ctx.fillText("VICTORY ACHIEVED!", 22, 30);
+
+      ctx.fillStyle = C3;
+      ctx.fillRect(66, 42, 28, 28);
+      ctx.fillStyle = C1;
+      ctx.fillRect(70, 46, 20, 20);
+      ctx.fillStyle = C3;
+      ctx.fillRect(76, 52, 3, 3);
+      ctx.fillRect(82, 58, 3, 3);
+
+      ctx.font = "8px 'Courier New', monospace";
+      ctx.fillText("You are a", 52, 86);
+      ctx.font = "9px 'Courier New', monospace";
+      ctx.fillText("B1SCU1T MASTER!", 28, 100);
+
+      ctx.fillStyle = C2;
+      ctx.fillRect(28, 114, 104, 18);
+      ctx.fillStyle = C0;
+      ctx.font = "8px 'Courier New', monospace";
+      if (Math.floor(Date.now() / 400) % 2 === 0) {
+        ctx.fillText("> [ PLAY AGAIN ] <", 34, 126);
+      } else {
+        ctx.fillText("  [ PLAY AGAIN ]  ", 34, 126);
+      }
+    }
+
+    function loop() {
+      ctx.clearRect(0, 0, 160, 144);
+      if (mode === "TITLE") renderTitle();
+      else if (mode === "GENDER") renderGenderSelect();
+      else if (mode === "OVERWORLD" || mode === "DIALOG") renderOverworld();
+      else if (mode === "BATTLE") renderBattle();
+      else if (mode === "VICTORY") renderVictory();
+      requestAnimationFrame(loop);
+    }
+
+    function showDialog(lines, cb = null) {
+      dialogLines = lines;
+      dialogIndex = 0;
+      pendingCallback = cb;
+      mode = "DIALOG";
+      sfxBeep();
+    }
+
+    function startBattle() {
+      playerHp = 100;
+      bossHp = 100;
+      battleTurn = "PLAYER";
+      battleLog = "b1scu1td3stroy3r wants";
+      battleSubLog = "to battle!";
+      mode = "BATTLE";
+      sfxHit();
+    }
+
+    function restartGame() {
+      playerHp = 100;
+      bossHp = 100;
+      playerX = 4;
+      playerY = 6;
+      Object.keys(biscuitsCollected).forEach(k => biscuitsCollected[k] = false);
+      mode = "OVERWORLD";
+      sfxItem();
+    }
+
+    function interact() {
+      initAudio();
+      let tx = playerX, ty = playerY;
+      if (playerDir === "UP") ty--;
+      if (playerDir === "DOWN") ty++;
+      if (playerDir === "LEFT") tx--;
+      if (playerDir === "RIGHT") tx++;
+
+      const item = biscuitItems.find(b => b.x === playerX && b.y === playerY && !biscuitsCollected[b.id]);
+      if (item) {
+        biscuitsCollected[item.id] = true;
+        sfxItem();
+        showDialog([`Found a ${item.name}!`, `Biscuits: ${getBiscuitCount()}/5`]);
+        return;
+      }
+
+      const npc = npcs.find(n => n.x === tx && n.y === ty);
+      if (npc) {
+        showDialog(npc.talk());
+      }
+    }
+
+    function movePlayer(dx, dy, dir) {
+      initAudio();
+      playerDir = dir;
+      const nx = playerX + dx;
+      const ny = playerY + dy;
+
+      if (nx >= 0 && nx < MAP_W && ny >= 0 && ny < MAP_H) {
+        const tile = map[ny][nx];
+        const hasNpc = npcs.some(n => n.x === nx && n.y === ny);
+        if (tile !== 1 && tile !== 2 && tile !== 3 && tile !== 4 && !hasNpc) {
+          playerX = nx;
+          playerY = ny;
+          sfxBeep();
+
+          const item = biscuitItems.find(b => b.x === playerX && b.y === playerY && !biscuitsCollected[b.id]);
+          if (item) {
+            biscuitsCollected[item.id] = true;
+            sfxItem();
+            showDialog([`Found a ${item.name}!`, `Biscuits: ${getBiscuitCount()}/5`]);
+          }
+        }
+      }
+    }
+
+    function handleA() {
+      initAudio();
+      if (mode === "TITLE") {
+        mode = "GENDER";
+        sfxBeep();
+      } else if (mode === "GENDER") {
+        mode = "OVERWORLD";
+        sfxItem();
+      } else if (mode === "OVERWORLD") {
+        interact();
+      } else if (mode === "DIALOG") {
+        mode = "OVERWORLD";
+        if (pendingCallback) pendingCallback();
+      } else if (mode === "BATTLE") {
+        if (battleTurn === "PLAYER") {
+          const dmg = 25 + Math.floor(Math.random() * 10);
+          bossHp = Math.max(0, bossHp - dmg);
+          sfxHit();
+          battleLog = `TERRY used CRUNCH!`;
+          battleSubLog = `Dealt ${dmg} damage!`;
+          battleTurn = "BOSS";
+
+          if (bossHp <= 0) {
+            battleLog = "b1scu1td3stroy3r fainted!";
+            battleTurn = "END";
+            return;
+          }
+
+          setTimeout(() => {
+            if (mode !== "BATTLE") return;
+            const bDmg = 15 + Math.floor(Math.random() * 8);
+            playerHp = Math.max(0, playerHp - bDmg);
+            sfxHit();
+            battleLog = `Enemy used PACKET BREACH!`;
+            battleSubLog = `TERRY took ${bDmg} damage!`;
+            battleTurn = "PLAYER";
+          }, 1100);
+        } else if (battleTurn === "END") {
+          mode = "VICTORY";
+          sfxVictory();
+        }
+      } else if (mode === "VICTORY") {
+        restartGame();
+      }
+    }
+
+    function handleB() {
+      initAudio();
+      if (mode === "BATTLE" && battleTurn === "PLAYER") {
+        playerHp = Math.min(100, playerHp + 18);
+        sfxItem();
+        battleLog = "TERRY nibbled a biscuit!";
+        battleSubLog = "Recovered 18 HP!";
+        battleTurn = "BOSS";
+        setTimeout(() => {
+          if (mode !== "BATTLE") return;
+          const bDmg = 12;
+          playerHp = Math.max(0, playerHp - bDmg);
+          sfxHit();
+          battleLog = `Enemy attacked!`;
+          battleSubLog = `TERRY took ${bDmg} damage!`;
+          battleTurn = "PLAYER";
+        }, 1100);
+      }
+    }
+
+    document.getElementById("btn-up").addEventListener("click", () => {
+      if (mode === "OVERWORLD") movePlayer(0, -1, "UP");
+      if (mode === "GENDER") playerGender = "BOY";
+    });
+    document.getElementById("btn-down").addEventListener("click", () => {
+      if (mode === "OVERWORLD") movePlayer(0, 1, "DOWN");
+      if (mode === "GENDER") playerGender = "GIRL";
+    });
+    document.getElementById("btn-left").addEventListener("click", () => {
+      if (mode === "OVERWORLD") movePlayer(-1, 0, "LEFT");
+    });
+    document.getElementById("btn-right").addEventListener("click", () => {
+      if (mode === "OVERWORLD") movePlayer(1, 0, "RIGHT");
+    });
+    document.getElementById("btn-a").addEventListener("click", handleA);
+    document.getElementById("btn-b").addEventListener("click", handleB);
+    document.getElementById("btn-start").addEventListener("click", handleA);
+    document.getElementById("btn-select").addEventListener("click", () => {
+      if (mode === "OVERWORLD") showDialog(["MENU: Biscuits: " + getBiscuitCount() + "/5"]);
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowUp" || e.key === "w") {
+        if (mode === "OVERWORLD") movePlayer(0, -1, "UP");
+        if (mode === "GENDER") playerGender = "BOY";
+      }
+      if (e.key === "ArrowDown" || e.key === "s") {
+        if (mode === "OVERWORLD") movePlayer(0, 1, "DOWN");
+        if (mode === "GENDER") playerGender = "GIRL";
+      }
+      if (e.key === "ArrowLeft" || e.key === "a") {
+        if (mode === "OVERWORLD") movePlayer(-1, 0, "LEFT");
+      }
+      if (e.key === "ArrowRight" || e.key === "d") {
+        if (mode === "OVERWORLD") movePlayer(1, 0, "RIGHT");
+      }
+      if (e.key === "z" || e.key === "Enter" || e.key === " ") handleA();
+      if (e.key === "x" || e.key === "Escape") handleB();
+    });
+
+    loop();
+  </script>
+</body>
+</html>
