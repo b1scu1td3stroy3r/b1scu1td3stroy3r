@@ -1,54 +1,51 @@
-\# Hi, I'm Terry 👋 (`b1scu1td3stroy3r`)
+# Hi, I'm Terry 👋 (`b1scu1td3stroy3r`)
 
+```text
+  ____  _                     _ _   ____            _                                
+ | __ )(_)___  ___ _   _(_) |_|  _ \  ___  ___| |_ _ __ ___  _   _  ___ _ __ 
+ |  _ \| / __|/ __| | | | | __| | | |/ _ \/ __| __| '__/ _ \| | | |/ _ \ '__|
+ | |_) | \__ \ (__| |_| | | |_| |_| |  __/\__ \ |_| | | (_) | |_| |  __/ |   
+ |____/|_|___/\___|\__,_|_|\__|____/ \___||___/\__|_|  \___/ \__, |\___|_|   
+                                                             |___/            
+```
 
+<p align="center">
+  <a href="https://b1scu1td3stroy3r.github.io/b1scu1td3stroy3r/">
+    <img src="https://img.shields.io/badge/%F0%9F%8E%AE%20LAUNCH_ARCADE-HEADER_BREACH-00ff66?style=for-the-badge&logoColor=black" alt="Play Header Breach Arcade">
+  </a>
+</p>
 
-```ascii
+---
 
-&#x20; \_\_\_\_  \_                     \_ \_   \_\_\_\_            \_                                
+### 🛡️ Operator Dossier
+Final-year **BSc (Honours) Computing & IT** student at **The Open University**, focusing on offensive application security, defensive header inspection, and practical CTF exploitation tooling.
 
-&#x20;| \_\_ )(\_)\_\_\_  \_\_\_ \_   \_(\_) |\_|  \_ \\  \_\_\_  \_\_\_| |\_ \_ \_\_ \_\_\_  \_   \_  \_\_\_ \_ \_\_ 
+- 🎓 **Academic Standing:** Final Year Computing & IT (The Open University)
+- 🎯 **Security Focus:** Insecure Object Deserialisation, Web Transport Security, Cryptographic Analysis & Reverse Engineering
+- 📜 **Verified Credentials:** [Credly Profile](https://www.credly.com/users/terence-white.f88e9516)
+- 🚩 **Offensive Labs:** [Hack The Box Profile](https://app.hackthebox.com/profile/2571595)
 
-&#x20;|  \_ \\| / \_\_|/ \_\_| | | | | \_\_| | | |/ \_ \\/ \_\_| \_\_| '\_\_/ \_ \\| | | |/ \_ \\ '\_\_|
+---
 
-&#x20;| |\_) | \\\_\_ \\ (\_\_| |\_| | | |\_| |\_| |  \_\_/\\\_\_ \\ |\_| | | (\_) | |\_| |  \_\_/ |   
+### 🍪 Featured Tooling & Research Labs
 
-&#x20;|\_\_\_\_/|\_|\_\_\_/\\\_\_\_|\\\_\_,\_|\_|\\\_\_|\_\_\_\_/ \\\_\_\_||\_\_\_/\\\_\_|\_|  \\\_\_\_/ \\\_\_, |\\\_\_\_|\_|   
+| Project | Domain | Tech Stack | Overview |
+| :--- | :--- | :--- | :--- |
+| [**shortbread**](https://github.com/b1scu1td3stroy3r/shortbread) | Defensive Auditing | Python, CLI | Fast terminal auditor verifying HTTP defence headers, HSTS, CSP, and transport security. |
+| [**custard-cream**](https://github.com/b1scu1td3stroy3r/custard-cream) | Cryptography & CTF | Python | Multi-layered string analyser and decoder supporting Base64, Hex, Binary, and hash signatures. |
+| [**jammy-dodger**](https://github.com/b1scu1td3stroy3r/jammy-dodger) | AppSec & Deserialisation | Java, Python | Demonstration lab illustrating Java `readObject()` object injection paired with Python payload delivery. |
 
-&#x20;                                                            |\_\_\_/
+---
 
+### 🛠️ Technical Competencies
 
+- **Programming:** Python 3, Java (Object-Oriented SE), Bash / Shell scripting
+- **Security & Vulnerability Research:** OWASP Top 10, Deserialisation Attacks, Bytecode Stream Inspection, Defensive Configurations
+- **Platforms & Tooling:** Linux, Git Bash, Windows Subsystem, Hack The Box Labs
 
-Final-year BSc (Honours) Computing \& IT student at The Open University, focusing on offensive application security, defensive header inspection, and practical CTF exploitation tooling.
+---
 
-
-
-🎓 Academic Standing: Final Year Computing \& IT (The Open University)
-
-
-
-🎯 Security Focus: Insecure Object Deserialisation, Web Transport Security, Cryptographic Analysis \& Reverse Engineering
-
-
-
-📜 Verified Credentials: Credly Profile - https://www.credly.com/users/terence-white.f88e9516
-
-
-
-🚩 Offensive Labs: Hack The Box Profile - https://app.hackthebox.com/profile/2571595
-
-
-
-
-
-🛠️ Technical Competencies
-
-Programming: Python 3, Java (Object-Oriented SE), Bash / Shell scripting
-
-
-
-Security \& Vulnerability Research: OWASP Top 10, Deserialisation Attacks, Bytecode Stream Inspection, Defensive Configurations
-
-
-
-Platforms \& Tooling: Linux, Git Bash, Windows Subsystem, Hack The Box Labs
-
+### 📬 Connect & Verify
+[![Credly](https://img.shields.io/badge/Credly-Verified_Badges-FF6B00?style=flat&logo=credly&logoColor=white)](https://www.credly.com/users/terence-white.f88e9516)
+[![Hack The Box](https://img.shields.io/badge/Hack_The_Box-Rank_Profile-9FEF00?style=flat&logo=hackthebox&logoColor=black)](https://app.hackthebox.com/profile/2571595)
+[![GitHub](https://img.shields.io/badge/GitHub-b1scu1td3stroy3r-181717?style=flat&logo=github&logoColor=white)](https://github.com/b1scu1td3stroy3r)
