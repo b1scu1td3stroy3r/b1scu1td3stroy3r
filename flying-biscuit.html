@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FLYING BISCUIT // Arcade</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body {
+      background: #080308;
+      color: #00ff66;
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+    .cabinet {
+      width: 100%;
+      max-width: 440px;
+      border: 3px solid #ffaa00;
+      background: #0f0a14;
+      box-shadow: 0 0 25px rgba(255, 170, 0, 0.35);
+      border-radius: 8px;
+      position: relative;
+    }
+    .crt::after {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04));
+      z-index: 20;
+      background-size: 100% 4px, 6px 100%;
+      pointer-events: none;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #120919;
+      image-rendering: pixelated;
+      cursor: pointer;
+    }
+    .controls-hint {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #ffcc66;
+      text-align: center;
+    }
+    .exit-bar {
+      margin-top: 14px;
+      font-size: 11px;
+    }
+    .exit-bar a {
+      color: #00ff66;
+      text-decoration: none;
+    }
+    .exit-bar a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cabinet crt">
+    <canvas id="gameCanvas" width="360" height="540"></canvas>
+  </div>
+
+  <p class="controls-hint">Tap Screen, Click Mouse, or Press [SPACE] / [UP] to Flap</p>
+
+  <div class="exit-bar">
+    <a href="arcade.html">&larr; Return to Arcade Hub</a>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Audio Engine
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    function playTone(freq, dur, type = "square", decay = true) {
+      if (!audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.09, audioCtx.currentTime);
+        if (decay) gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + dur);
+      } catch(e) {}
+    }
+    function sfxFlap() { playTone(440, 0.08, "triangle"); }
+    function sfxScore() {
+      playTone(587, 0.08, "sine");
+      setTimeout(() => playTone(880, 0.14, "sine"), 80);
+    }
+    function sfxCrash() {
+      playTone(120, 0.25, "sawtooth");
+      setTimeout(() => playTone(70, 0.35, "sawtooth"), 120);
+    }
+
+    // Game States
+    let gameState = "READY"; // READY, PLAYING, GAMEOVER
+    let frame = 0;
+    let score = 0;
+    let highScore = localStorage.getItem("flying_biscuit_hi") || 0;
+
+    // Biscuit Player
+    const biscuit = {
+      x: 80,
+      y: 240,
+      r: 16,
+      vy: 0,
+      gravity: 0.36,
+      jump: -6.4,
+      rotation: 0
+    };
+
+    // Obstacles (Tea Pillars)
+    const pipes = [];
+    const pipeWidth = 54;
+    const pipeGap = 135;
+    const pipeSpeed = 2.2;
+
+    // Particles (Crumbs & Feathers)
+    const crumbs = [];
+
+    function spawnCrumb(x, y) {
+      crumbs.push({
+        x: x,
+        y: y,
+        vx: (Math.random() - 1.5) * 2,
+        vy: (Math.random() - 0.5) * 2,
+        life: 25,
+        color: Math.random() > 0.4 ? "#d29a50" : "#ffffff"
+      });
+    }
+
+    function flap() {
+      initAudio();
+      if (gameState === "READY") {
+        gameState = "PLAYING";
+        biscuit.vy = biscuit.jump;
+        sfxFlap();
+      } else if (gameState === "PLAYING") {
+        biscuit.vy = biscuit.jump;
+        sfxFlap();
+        for (let i = 0; i < 4; i++) {
+          spawnCrumb(biscuit.x - 12, biscuit.y + (Math.random() - 0.5) * 10);
+        }
+      } else if (gameState === "GAMEOVER") {
+        resetGame();
+      }
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === " " || e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
+        e.preventDefault();
+        flap();
+      }
+    });
+    canvas.addEventListener("mousedown", flap);
+    canvas.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      flap();
+    });
+
+    function resetGame() {
+      biscuit.y = 240;
+      biscuit.vy = 0;
+      biscuit.rotation = 0;
+      pipes.length = 0;
+      crumbs.length = 0;
+      score = 0;
+      frame = 0;
+      gameState = "PLAYING";
+      biscuit.vy = biscuit.jump;
+      sfxFlap();
+    }
+
+    function spawnPipe() {
+      const minTop = 60;
+      const maxTop = canvas.height - pipeGap - 80;
+      const topHeight = Math.floor(minTop + Math.random() * (maxTop - minTop));
+
+      pipes.push({
+        x: canvas.width + 10,
+        top: topHeight,
+        bottom: topHeight + pipeGap,
+        passed: false
+      });
+    }
+
+    function drawBiscuit() {
+      ctx.save();
+      ctx.translate(biscuit.x, biscuit.y);
+
+      // Pitch angle based on velocity
+      biscuit.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 5, biscuit.vy * 0.08));
+      ctx.rotate(biscuit.rotation);
+
+      // Biscuit Golden Crust Body
+      ctx.fillStyle = "#d29a50";
+      ctx.beginPath();
+      ctx.arc(0, 0, biscuit.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#8c561b";
+      ctx.stroke();
+
+      // Biscuit Texture Punctures
+      ctx.fillStyle = "#8c561b";
+      const dots = [
+        [-6, -6], [0, -7], [6, -6],
+        [-7, 0], [0, 0], [7, 0],
+        [-6, 6], [0, 7], [6, 6]
+      ];
+      dots.forEach(d => {
+        ctx.fillRect(d[0] - 1, d[1] - 1, 2, 2);
+      });
+
+      // Wing (Flapping Animation)
+      const wingFlap = Math.sin(frame * 0.45) * 7;
+      ctx.fillStyle = "#ffffff";
+      ctx.strokeStyle = "#eed0a0";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(-6, wingFlap, 11, 6, -0.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Googly Eye
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(7, -5, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#000000";
+      ctx.beginPath();
+      ctx.arc(9, -5, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawPipe(p) {
+      // Top Cup / Pillar (Hangs Down)
+      ctx.fillStyle = "#2a52be"; // Royal Porcelain Blue
+      ctx.fillRect(p.x, 0, pipeWidth, p.top);
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(p.x, 0, pipeWidth, p.top);
+
+      // Top Cup Rim Lip
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(p.x - 4, p.top - 16, pipeWidth + 8, 16);
+      ctx.strokeStyle = "#2a52be";
+      ctx.strokeRect(p.x - 4, p.top - 16, pipeWidth + 8, 16);
+
+      // Bottom Cup / Pillar (Rises Up)
+      const bHeight = canvas.height - p.bottom;
+      ctx.fillStyle = "#2a52be";
+      ctx.fillRect(p.x, p.bottom, pipeWidth, bHeight);
+      ctx.strokeStyle = "#ffffff";
+      ctx.strokeRect(p.x, p.bottom, pipeWidth, bHeight);
+
+      // Bottom Cup Rim Lip
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(p.x - 4, p.bottom, pipeWidth + 8, 16);
+      ctx.strokeStyle = "#2a52be";
+      ctx.strokeRect(p.x - 4, p.bottom, pipeWidth + 8, 16);
+
+      // Tea / Steam Decorative Indicator
+      ctx.fillStyle = "#ffaa00";
+      ctx.fillRect(p.x + 12, p.top - 10, pipeWidth - 24, 4);
+      ctx.fillRect(p.x + 12, p.bottom + 6, pipeWidth - 24, 4);
+    }
+
+    function checkCollision(p) {
+      // Circle vs Box approximation
+      const bx = biscuit.x;
+      const by = biscuit.y;
+      const br = biscuit.r - 2; // Slight grace buffer
+
+      // Check within horizontal bounds of the pipe
+      if (bx + br > p.x - 4 && bx - br < p.x + pipeWidth + 4) {
+        if (by - br < p.top || by + br > p.bottom) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function triggerCrash() {
+      gameState = "GAMEOVER";
+      sfxCrash();
+      for (let i = 0; i < 30; i++) {
+        spawnCrumb(biscuit.x, biscuit.y);
+      }
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem("flying_biscuit_hi", highScore);
+      }
+    }
+
+    function update() {
+      frame++;
+
+      if (gameState === "PLAYING") {
+        // Biscuit Physics
+        biscuit.vy += biscuit.gravity;
+        biscuit.y += biscuit.vy;
+
+        // Ground / Ceiling Collisions
+        if (biscuit.y + biscuit.r >= canvas.height - 24) {
+          biscuit.y = canvas.height - 24 - biscuit.r;
+          triggerCrash();
+        }
+        if (biscuit.y - biscuit.r <= 0) {
+          biscuit.y = biscuit.r;
+          biscuit.vy = 0;
+        }
+
+        // Pipe Management
+        if (frame % 85 === 0) {
+          spawnPipe();
+        }
+
+        for (let i = pipes.length - 1; i >= 0; i--) {
+          const p = pipes[i];
+          p.x -= pipeSpeed;
+
+          // Score check: Biscuit clears the pillar
+          if (!p.passed && p.x + pipeWidth < biscuit.x) {
+            p.passed = true;
+            score++;
+            sfxScore();
+          }
+
+          // Collision check
+          if (checkCollision(p)) {
+            triggerCrash();
+          }
+
+          // Cull off-screen pipes
+          if (p.x + pipeWidth < -20) {
+            pipes.splice(i, 1);
+          }
+        }
+      }
+
+      // Update Crumb Particles
+      for (let i = crumbs.length - 1; i >= 0; i--) {
+        const c = crumbs[i];
+        c.x += c.vx;
+        c.y += c.vy;
+        c.life--;
+        if (c.life <= 0) crumbs.splice(i, 1);
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Night Sky Gradient
+      ctx.fillStyle = "#150b22";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Background Tea Stars
+      ctx.fillStyle = "#ffdd88";
+      for (let i = 0; i < 18; i++) {
+        const sx = ((i * 37) + (frame * 0.1)) % canvas.width;
+        const sy = (i * 29) % (canvas.height - 100);
+        ctx.fillRect(sx, sy, 2, 2);
+      }
+
+      // Draw Pipes
+      pipes.forEach(drawPipe);
+
+      // Tablecloth Floor
+      ctx.fillStyle = "#4a1228";
+      ctx.fillRect(0, canvas.height - 24, canvas.width, 24);
+      ctx.fillStyle = "#eeddcc";
+      for (let x = 0; x < canvas.width; x += 16) {
+        ctx.fillRect(x + ((frame * 1.5) % 16) - 16, canvas.height - 24, 8, 24);
+      }
+
+      // Draw Particles
+      crumbs.forEach(c => {
+        ctx.fillStyle = c.color;
+        ctx.fillRect(c.x, c.y, 3, 3);
+      });
+
+      // Draw Flying Biscuit
+      if (gameState !== "GAMEOVER" || (gameState === "GAMEOVER" && frame % 4 < 2)) {
+        drawBiscuit();
+      }
+
+      // HUD Score
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 28px 'Courier New'";
+      ctx.textAlign = "center";
+      ctx.shadowColor = "#ffaa00";
+      ctx.shadowBlur = 8;
+      ctx.fillText(score, canvas.width / 2, 54);
+      ctx.shadowBlur = 0;
+
+      // Menu Overlays
+      if (gameState === "READY") {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#ffaa00";
+        ctx.font = "bold 24px 'Courier New'";
+        ctx.fillText("FLYING BISCUIT", canvas.width / 2, 170);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "14px 'Courier New'";
+        ctx.fillText("TAP OR PRESS [SPACE]", canvas.width / 2, 210);
+        ctx.fillText("TO TAKE FLIGHT", canvas.width / 2, 230);
+
+        ctx.fillStyle = "#00ff66";
+        ctx.font = "12px 'Courier New'";
+        ctx.fillText(`BEST SCORE: ${highScore}`, canvas.width / 2, 280);
+
+      } else if (gameState === "GAMEOVER") {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#ff3355";
+        ctx.font = "bold 26px 'Courier New'";
+        ctx.fillText("CRUMBLED!", canvas.width / 2, 180);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "15px 'Courier New'";
+        ctx.fillText(`SCORE: ${score}`, canvas.width / 2, 220);
+        ctx.fillStyle = "#ffaa00";
+        ctx.fillText(`BEST: ${highScore}`, canvas.width / 2, 245);
+
+        ctx.fillStyle = "#00ff66";
+        ctx.font = "bold 13px 'Courier New'";
+        if (Math.floor(Date.now() / 400) % 2 === 0) {
+          ctx.fillText("> TAP / [SPACE] TO RETRY <", canvas.width / 2, 310);
+        } else {
+          ctx.fillText("  TAP / [SPACE] TO RETRY  ", canvas.width / 2, 310);
+        }
+      }
+
+      ctx.textAlign = "left";
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+</body>
+</html>
