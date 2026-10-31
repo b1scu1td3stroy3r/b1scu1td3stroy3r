@@ -24,10 +24,7 @@ Final-year **BSc (Honours) Computing & IT** student at **The Open University**, 
 - 🎯 **Security Focus:** Insecure Object Deserialisation, Web Transport Security, Cryptographic Analysis & Reverse Engineering
 - 📜 **Verified Credentials:** [Credly Profile](https://www.credly.com/users/terry_white)
 - 🚩 **Offensive Labs:** [Hack The Box Profile](https://app.hackthebox.com/public/users/2571595)
-<<<<<<< HEAD
 - ⏱️ **Competitive CTF:** [CTFtime Profile](https://ctftime.org/user/237405)
-=======
--⏱️ **Competitive CTF:** [CTFtime Profile](https://ctftime.org/user/237405)
 
 ---
 
