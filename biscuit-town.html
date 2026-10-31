@@ -338,6 +338,7 @@
     let battleLog = "";
     let battleSubLog = "";
 
+    const TILE_SIZE = 16;
     const MAP_W = 14, MAP_H = 12;
     const map = [
       [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -392,8 +393,31 @@
       return Object.values(biscuitsCollected).filter(Boolean).length;
     }
 
-    function drawTile(tile, tx, ty) {
-      const px = tx * 16, py = ty * 16;
+    function getCameraOffsets() {
+      // Screen is 160x144. Viewport center is at (80, 72).
+      const pPixelX = playerX * TILE_SIZE + 8;
+      const pPixelY = playerY * TILE_SIZE + 8;
+
+      let camX = pPixelX - 80;
+      let camY = pPixelY - 72;
+
+      // Clamp camera so it never scrolls beyond map bounds
+      const maxCamX = (MAP_W * TILE_SIZE) - 160;
+      const maxCamY = (MAP_H * TILE_SIZE) - 144;
+
+      camX = Math.max(0, Math.min(camX, maxCamX));
+      camY = Math.max(0, Math.min(camY, maxCamY));
+
+      return { camX, camY };
+    }
+
+    function drawTile(tile, tx, ty, camX, camY) {
+      const px = (tx * TILE_SIZE) - camX;
+      const py = (ty * TILE_SIZE) - camY;
+
+      // Discard tiles strictly outside viewport
+      if (px < -16 || px > 160 || py < -16 || py > 144) return;
+
       if (tile === 0) {
         ctx.fillStyle = C1;
         ctx.fillRect(px, py, 16, 16);
@@ -430,8 +454,10 @@
       }
     }
 
-    function drawSprite(x, y, color, hat = false, female = false) {
-      const px = x * 16, py = y * 16;
+    function drawSprite(x, y, color, hat = false, female = false, camX = 0, camY = 0) {
+      const px = (x * TILE_SIZE) - camX;
+      const py = (y * TILE_SIZE) - camY;
+
       ctx.fillStyle = color;
       ctx.fillRect(px + 5, py + 2, 6, 6);
       if (female) {
@@ -503,8 +529,8 @@
       ctx.fillText("Are you a BOY", 30, 34);
       ctx.fillText("or a GIRL?", 46, 46);
 
-      drawSprite(3, 4, C3, true, false);
-      drawSprite(6, 4, C2, false, true);
+      drawSprite(3, 4, C3, true, false, 0, 0);
+      drawSprite(6, 4, C2, false, true, 0, 0);
 
       ctx.fillText(playerGender === "BOY" ? "> BOY" : "  BOY", 44, 94);
       ctx.fillText(playerGender === "GIRL" ? "> GIRL" : "  GIRL", 44, 108);
@@ -514,15 +540,20 @@
     }
 
     function renderOverworld() {
+      const { camX, camY } = getCameraOffsets();
+
+      // Render scrolling map tiles
       for (let y = 0; y < MAP_H; y++) {
         for (let x = 0; x < MAP_W; x++) {
-          drawTile(map[y][x], x, y);
+          drawTile(map[y][x], x, y, camX, camY);
         }
       }
 
+      // Render Collectible Biscuits with camera offset
       biscuitItems.forEach(b => {
         if (!biscuitsCollected[b.id]) {
-          const px = b.x * 16, py = b.y * 16;
+          const px = (b.x * TILE_SIZE) - camX;
+          const py = (b.y * TILE_SIZE) - camY;
           ctx.fillStyle = C2;
           ctx.fillRect(px + 4, py + 4, 8, 8);
           ctx.fillStyle = C0;
@@ -530,15 +561,18 @@
         }
       });
 
+      // Render NPCs with camera offset
       npcs.forEach(npc => {
         let col = C3;
         if (npc.name === "Youngster") col = C2;
         if (npc.name === "b1scu1td3stroy3r") col = C3;
-        drawSprite(npc.x, npc.y, col, npc.name === "Youngster");
+        drawSprite(npc.x, npc.y, col, npc.name === "Youngster", false, camX, camY);
       });
 
-      drawSprite(playerX, playerY, C3, playerGender === "BOY", playerGender === "GIRL");
+      // Render Player with camera offset
+      drawSprite(playerX, playerY, C3, playerGender === "BOY", playerGender === "GIRL", camX, camY);
 
+      // Fixed HUD Overlay
       ctx.fillStyle = C0;
       ctx.fillRect(0, 0, 160, 14);
       ctx.fillStyle = C3;
@@ -704,6 +738,7 @@
       const nx = playerX + dx;
       const ny = playerY + dy;
 
+      // Strict boundary check inside map arrays
       if (nx >= 0 && nx < MAP_W && ny >= 0 && ny < MAP_H) {
         const tile = map[ny][nx];
         const hasNpc = npcs.some(n => n.x === nx && n.y === ny);
