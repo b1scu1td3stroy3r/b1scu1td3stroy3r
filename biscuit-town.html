@@ -283,10 +283,10 @@
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    const C0 = "#9bbc0f";
-    const C1 = "#8bac0f";
-    const C2 = "#306230";
-    const C3 = "#0f380f";
+    const C0 = "#9bbc0f"; // Lightest
+    const C1 = "#8bac0f"; // Light
+    const C2 = "#306230"; // Dark
+    const C3 = "#0f380f"; // Darkest
 
     let audioCtx = null;
     function initAudio() {
@@ -314,7 +314,7 @@
       [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => playTone(f, 0.15), i * 120));
     }
 
-    let mode = "TITLE";
+    let mode = "TITLE"; // TITLE, GENDER, OVERWORLD, DIALOG, BATTLE, VICTORY, DEFEAT
     let playerName = "TERRY";
     let playerGender = "BOY";
     let playerX = 4, playerY = 6;
@@ -329,14 +329,30 @@
     };
 
     let dialogLines = [];
-    let dialogIndex = 0;
     let pendingCallback = null;
 
-    let playerHp = 100;
-    let bossHp = 100;
-    let battleTurn = "PLAYER";
-    let battleLog = "";
-    let battleSubLog = "";
+    // 20 HP Turn-Based Battle State
+    const MAX_HP = 20;
+    let playerHp = 20;
+    let bossHp = 20;
+    let battleState = "SELECT_MOVE"; // SELECT_MOVE, MESSAGE, ENEMY_MESSAGE, FINISHED
+    let selectedMoveIndex = 0;
+    let battleMessage = "";
+    let battleSubMessage = "";
+
+    const playerMoves = [
+      { name: "CRUMB BLAST", minDmg: 5, maxDmg: 7, type: "ATK" },
+      { name: "CUSTARD SLAM", minDmg: 7, maxDmg: 10, type: "ATK" },
+      { name: "TEA DUNK", heal: 6, type: "HEAL" },
+      { name: "BOURBON SNAP", minDmg: 4, maxDmg: 5, heal: 2, type: "DRAIN" }
+    ];
+
+    const bossMoves = [
+      { name: "GINGER SNAP", minDmg: 4, maxDmg: 6 },
+      { name: "OREO CRUSH", minDmg: 5, maxDmg: 7 },
+      { name: "JAMMY SQUIRT", minDmg: 3, maxDmg: 5 },
+      { name: "DIGESTIVE CURSE", minDmg: 4, maxDmg: 6 }
+    ];
 
     const TILE_SIZE = 16;
     const MAP_W = 14, MAP_H = 12;
@@ -370,14 +386,7 @@
       },
       {
         x: 6, y: 9, dir: "UP", name: "b1scu1td3stroy3r",
-        talk: () => {
-          const count = Object.values(biscuitsCollected).filter(Boolean).length;
-          if (count >= 5) {
-            startBattle();
-            return ["I challenge you", "to a Biscuit Duel!"];
-          }
-          return ["I await a worthy", "challenger who has", "found all 5 biscuits."];
-        }
+        talk: () => []
       }
     ];
 
@@ -652,54 +661,86 @@
       ctx.fillStyle = C0;
       ctx.fillRect(0, 0, 160, 144);
 
+      // --- Enemy HUD (Top-Left) ---
       ctx.fillStyle = C3;
-      ctx.fillRect(10, 12, 70, 24);
+      ctx.fillRect(8, 8, 78, 26);
       ctx.fillStyle = C0;
-      ctx.fillRect(12, 14, 66, 20);
+      ctx.fillRect(10, 10, 74, 22);
       ctx.fillStyle = C3;
       ctx.font = "7px 'Courier New', monospace";
-      ctx.fillText("b1scu1td3stroy3r", 14, 22);
-      ctx.fillText(`HP: ${bossHp}/100`, 14, 30);
+      ctx.fillText("b1scu1td3stroy3r", 12, 18);
 
+      // Boss HP Bar
+      ctx.strokeRect(12, 22, 48, 5);
+      const bRatio = Math.max(0, bossHp / MAX_HP);
       ctx.fillStyle = C3;
-      ctx.fillRect(100, 14, 44, 36);
+      ctx.fillRect(13, 23, Math.round(46 * bRatio), 3);
+      ctx.fillText(`${bossHp}/${MAX_HP}`, 63, 27);
+
+      // --- Boss Sprite (Top-Right) ---
+      ctx.fillStyle = C3;
+      ctx.fillRect(102, 12, 44, 38);
       ctx.fillStyle = C2;
-      ctx.fillRect(106, 20, 32, 24);
+      ctx.fillRect(108, 18, 32, 26);
       ctx.fillStyle = C0;
-      ctx.fillRect(112, 24, 6, 4);
-      ctx.fillRect(124, 24, 6, 4);
+      ctx.fillRect(114, 22, 6, 4);
+      ctx.fillRect(126, 22, 6, 4);
 
+      // --- Player HUD (Bottom-Right) ---
       ctx.fillStyle = C3;
-      ctx.fillRect(80, 58, 70, 24);
+      ctx.fillRect(74, 56, 78, 26);
       ctx.fillStyle = C0;
-      ctx.fillRect(82, 60, 66, 20);
+      ctx.fillRect(76, 58, 74, 22);
       ctx.fillStyle = C3;
-      ctx.fillText(playerName, 84, 68);
-      ctx.fillText(`HP: ${playerHp}/100`, 84, 76);
+      ctx.fillText(playerName, 78, 66);
 
+      // Player HP Bar
+      ctx.strokeRect(78, 70, 48, 5);
+      const pRatio = Math.max(0, playerHp / MAX_HP);
       ctx.fillStyle = C3;
-      ctx.fillRect(18, 56, 32, 32);
+      ctx.fillRect(79, 71, Math.round(46 * pRatio), 3);
+      ctx.fillText(`${playerHp}/${MAX_HP}`, 129, 75);
+
+      // --- Player Back Sprite (Bottom-Left) ---
+      ctx.fillStyle = C3;
+      ctx.fillRect(16, 52, 34, 34);
       ctx.fillStyle = C2;
-      ctx.fillRect(22, 60, 24, 24);
+      ctx.fillRect(20, 56, 26, 26);
+      ctx.fillStyle = C1;
+      ctx.fillRect(24, 60, 18, 18);
 
+      // --- Bottom Dialogue / Move Selection Deck ---
       ctx.fillStyle = C0;
-      ctx.fillRect(4, 94, 152, 46);
+      ctx.fillRect(4, 88, 152, 52);
       ctx.lineWidth = 2;
       ctx.strokeStyle = C3;
-      ctx.strokeRect(4, 94, 152, 46);
+      ctx.strokeRect(4, 88, 152, 52);
 
       ctx.fillStyle = C3;
       ctx.font = "8px 'Courier New', monospace";
 
-      if (battleTurn === "PLAYER") {
-        ctx.fillText(battleLog || "What will TERRY do?", 10, 108);
-        ctx.fillText("[A] CRUNCH  [B] DEFEND", 10, 124);
-      } else if (battleTurn === "BOSS") {
-        ctx.fillText(battleLog, 10, 108);
-        ctx.fillText(battleSubLog, 10, 122);
-      } else if (battleTurn === "END") {
-        ctx.fillText(battleLog, 10, 108);
-        ctx.fillText("[A] Continue", 10, 124);
+      if (battleState === "SELECT_MOVE") {
+        // 4-Move Grid
+        const moves = [
+          { name: "CRUMB BLAST", x: 14, y: 104 },
+          { name: "CUSTARD SLAM", x: 84, y: 104 },
+          { name: "TEA DUNK", x: 14, y: 124 },
+          { name: "BOURBON SNAP", x: 84, y: 124 }
+        ];
+
+        moves.forEach((m, idx) => {
+          if (selectedMoveIndex === idx) {
+            ctx.fillText(">", m.x - 7, m.y);
+          }
+          ctx.fillText(m.name, m.x, m.y);
+        });
+
+      } else {
+        ctx.fillText(battleMessage, 10, 106);
+        ctx.fillText(battleSubMessage, 10, 120);
+        if (Math.floor(Date.now() / 400) % 2 === 0) {
+          ctx.fillText("▼", 144, 134);
+        }
       }
     }
 
@@ -709,29 +750,64 @@
 
       ctx.fillStyle = C3;
       ctx.font = "9px 'Courier New', monospace";
-      ctx.fillText("VICTORY ACHIEVED!", 22, 30);
+      ctx.fillText("VICTORY ACHIEVED!", 22, 28);
 
+      // Trophy Biscuit
       ctx.fillStyle = C3;
-      ctx.fillRect(66, 42, 28, 28);
+      ctx.fillRect(66, 38, 28, 28);
       ctx.fillStyle = C1;
-      ctx.fillRect(70, 46, 20, 20);
+      ctx.fillRect(70, 42, 20, 20);
       ctx.fillStyle = C3;
-      ctx.fillRect(76, 52, 3, 3);
-      ctx.fillRect(82, 58, 3, 3);
+      ctx.fillRect(76, 48, 3, 3);
+      ctx.fillRect(82, 54, 3, 3);
 
       ctx.font = "8px 'Courier New', monospace";
-      ctx.fillText("You are a", 52, 86);
+      ctx.fillText("You defeated", 50, 78);
+      ctx.fillText("b1scu1td3stroy3r!", 32, 90);
+
       ctx.font = "9px 'Courier New', monospace";
-      ctx.fillText("B1SCU1T MASTER!", 28, 100);
+      ctx.fillText("B1SCU1T MASTER!", 28, 106);
 
       ctx.fillStyle = C2;
-      ctx.fillRect(28, 114, 104, 18);
+      ctx.fillRect(26, 116, 108, 18);
       ctx.fillStyle = C0;
       ctx.font = "8px 'Courier New', monospace";
       if (Math.floor(Date.now() / 400) % 2 === 0) {
-        ctx.fillText("> [ PLAY AGAIN ] <", 34, 126);
+        ctx.fillText("> [ PLAY AGAIN ] <", 32, 128);
       } else {
-        ctx.fillText("  [ PLAY AGAIN ]  ", 34, 126);
+        ctx.fillText("  [ PLAY AGAIN ]  ", 32, 128);
+      }
+    }
+
+    function renderDefeat() {
+      ctx.fillStyle = C0;
+      ctx.fillRect(0, 0, 160, 144);
+
+      ctx.fillStyle = C3;
+      ctx.font = "9px 'Courier New', monospace";
+      ctx.fillText("OUT OF BISCUITS!", 24, 30);
+
+      // Crumbled Biscuit
+      ctx.fillStyle = C2;
+      ctx.fillRect(64, 46, 10, 10);
+      ctx.fillRect(86, 50, 12, 10);
+      ctx.fillRect(74, 62, 8, 8);
+      ctx.fillStyle = C3;
+      ctx.fillRect(68, 50, 2, 2);
+      ctx.fillRect(90, 54, 2, 2);
+
+      ctx.font = "8px 'Courier New', monospace";
+      ctx.fillText("TERRY was crumbled...", 24, 84);
+      ctx.fillText("b1scu1td3stroy3r wins!", 20, 98);
+
+      ctx.fillStyle = C3;
+      ctx.fillRect(26, 114, 108, 18);
+      ctx.fillStyle = C0;
+      ctx.font = "8px 'Courier New', monospace";
+      if (Math.floor(Date.now() / 400) % 2 === 0) {
+        ctx.fillText("> [ PLAY AGAIN ] <", 32, 126);
+      } else {
+        ctx.fillText("  [ PLAY AGAIN ]  ", 32, 126);
       }
     }
 
@@ -742,30 +818,31 @@
       else if (mode === "OVERWORLD" || mode === "DIALOG") renderOverworld();
       else if (mode === "BATTLE") renderBattle();
       else if (mode === "VICTORY") renderVictory();
+      else if (mode === "DEFEAT") renderDefeat();
       requestAnimationFrame(loop);
     }
 
     function showDialog(lines, cb = null) {
       dialogLines = lines;
-      dialogIndex = 0;
       pendingCallback = cb;
       mode = "DIALOG";
       sfxBeep();
     }
 
     function startBattle() {
-      playerHp = 100;
-      bossHp = 100;
-      battleTurn = "PLAYER";
-      battleLog = "b1scu1td3stroy3r wants";
-      battleSubLog = "to battle!";
+      playerHp = 20;
+      bossHp = 20;
+      selectedMoveIndex = 0;
+      battleState = "MESSAGE";
+      battleMessage = "b1scu1td3stroy3r wants";
+      battleSubMessage = "to duel!";
       mode = "BATTLE";
       sfxHit();
     }
 
     function restartGame() {
-      playerHp = 100;
-      bossHp = 100;
+      playerHp = 20;
+      bossHp = 20;
       playerX = 4;
       playerY = 6;
       Object.keys(biscuitsCollected).forEach(k => biscuitsCollected[k] = false);
@@ -791,6 +868,18 @@
 
       const npc = npcs.find(n => n.x === tx && n.y === ty);
       if (npc) {
+        if (npc.name === "b1scu1td3stroy3r") {
+          const count = getBiscuitCount();
+          if (count >= 5) {
+            showDialog(["I challenge you", "to a Biscuit Duel!"], () => {
+              startBattle();
+            });
+            return;
+          } else {
+            showDialog(["I await a worthy", "challenger who has", "found all 5 biscuits."]);
+            return;
+          }
+        }
         showDialog(npc.talk());
       }
     }
@@ -819,6 +908,57 @@
       }
     }
 
+    function executePlayerMove() {
+      const move = playerMoves[selectedMoveIndex];
+      sfxHit();
+
+      if (move.type === "ATK") {
+        const dmg = move.minDmg + Math.floor(Math.random() * (move.maxDmg - move.minDmg + 1));
+        bossHp = Math.max(0, bossHp - dmg);
+        battleMessage = `TERRY used ${move.name}!`;
+        battleSubMessage = `Dealt ${dmg} damage!`;
+      } else if (move.type === "HEAL") {
+        const heal = move.heal;
+        playerHp = Math.min(MAX_HP, playerHp + heal);
+        battleMessage = `TERRY used ${move.name}!`;
+        battleSubMessage = `Restored ${heal} HP!`;
+      } else if (move.type === "DRAIN") {
+        const dmg = move.minDmg + Math.floor(Math.random() * (move.maxDmg - move.minDmg + 1));
+        bossHp = Math.max(0, bossHp - dmg);
+        playerHp = Math.min(MAX_HP, playerHp + move.heal);
+        battleMessage = `TERRY used ${move.name}!`;
+        battleSubMessage = `Hit for ${dmg}, +${move.heal} HP!`;
+      }
+
+      if (bossHp <= 0) {
+        battleState = "FINISHED";
+        battleMessage = "b1scu1td3stroy3r crumbled!";
+        battleSubMessage = "TERRY won the duel!";
+        return;
+      }
+
+      battleState = "MESSAGE";
+    }
+
+    function executeBossMove() {
+      const move = bossMoves[Math.floor(Math.random() * bossMoves.length)];
+      const dmg = move.minDmg + Math.floor(Math.random() * (move.maxDmg - move.minDmg + 1));
+      playerHp = Math.max(0, playerHp - dmg);
+      sfxHit();
+
+      battleMessage = `Enemy used ${move.name}!`;
+      battleSubMessage = `TERRY took ${dmg} damage!`;
+
+      if (playerHp <= 0) {
+        battleState = "FINISHED";
+        battleMessage = "TERRY crumbled into bits!";
+        battleSubMessage = "b1scu1td3stroy3r won...";
+        return;
+      }
+
+      battleState = "ENEMY_MESSAGE";
+    }
+
     function handleA() {
       initAudio();
       if (mode === "TITLE") {
@@ -830,75 +970,77 @@
       } else if (mode === "OVERWORLD") {
         interact();
       } else if (mode === "DIALOG") {
-        mode = "OVERWORLD";
-        if (pendingCallback) pendingCallback();
-      } else if (mode === "BATTLE") {
-        if (battleTurn === "PLAYER") {
-          const dmg = 25 + Math.floor(Math.random() * 10);
-          bossHp = Math.max(0, bossHp - dmg);
-          sfxHit();
-          battleLog = `TERRY used CRUNCH!`;
-          battleSubLog = `Dealt ${dmg} damage!`;
-          battleTurn = "BOSS";
-
-          if (bossHp <= 0) {
-            battleLog = "b1scu1td3stroy3r fainted!";
-            battleTurn = "END";
-            return;
-          }
-
-          setTimeout(() => {
-            if (mode !== "BATTLE") return;
-            const bDmg = 15 + Math.floor(Math.random() * 8);
-            playerHp = Math.max(0, playerHp - bDmg);
-            sfxHit();
-            battleLog = `Enemy used PACKET BREACH!`;
-            battleSubLog = `TERRY took ${bDmg} damage!`;
-            battleTurn = "PLAYER";
-          }, 1100);
-        } else if (battleTurn === "END") {
-          mode = "VICTORY";
-          sfxVictory();
+        if (pendingCallback) {
+          const cb = pendingCallback;
+          pendingCallback = null;
+          cb();
+        } else {
+          mode = "OVERWORLD";
         }
-      } else if (mode === "VICTORY") {
+      } else if (mode === "BATTLE") {
+        if (battleState === "SELECT_MOVE") {
+          executePlayerMove();
+        } else if (battleState === "MESSAGE") {
+          executeBossMove();
+        } else if (battleState === "ENEMY_MESSAGE") {
+          battleState = "SELECT_MOVE";
+        } else if (battleState === "FINISHED") {
+          if (bossHp <= 0) {
+            mode = "VICTORY";
+            sfxVictory();
+          } else {
+            mode = "DEFEAT";
+            sfxHit();
+          }
+        }
+      } else if (mode === "VICTORY" || mode === "DEFEAT") {
         restartGame();
       }
     }
 
     function handleB() {
       initAudio();
-      if (mode === "BATTLE" && battleTurn === "PLAYER") {
-        playerHp = Math.min(100, playerHp + 18);
-        sfxItem();
-        battleLog = "TERRY nibbled a biscuit!";
-        battleSubLog = "Recovered 18 HP!";
-        battleTurn = "BOSS";
-        setTimeout(() => {
-          if (mode !== "BATTLE") return;
-          const bDmg = 12;
-          playerHp = Math.max(0, playerHp - bDmg);
-          sfxHit();
-          battleLog = `Enemy attacked!`;
-          battleSubLog = `TERRY took ${bDmg} damage!`;
-          battleTurn = "PLAYER";
-        }, 1100);
+      if (mode === "BATTLE" && battleState === "SELECT_MOVE") {
+        selectedMoveIndex = 2; // Quick shortcut to TEA DUNK (heal)
+        sfxBeep();
       }
     }
 
+    // D-Pad navigation for moves & overworld
     document.getElementById("btn-up").addEventListener("click", () => {
       if (mode === "OVERWORLD") movePlayer(0, -1, "UP");
       if (mode === "GENDER") playerGender = "BOY";
+      if (mode === "BATTLE" && battleState === "SELECT_MOVE") {
+        if (selectedMoveIndex >= 2) selectedMoveIndex -= 2;
+        sfxBeep();
+      }
     });
+
     document.getElementById("btn-down").addEventListener("click", () => {
       if (mode === "OVERWORLD") movePlayer(0, 1, "DOWN");
       if (mode === "GENDER") playerGender = "GIRL";
+      if (mode === "BATTLE" && battleState === "SELECT_MOVE") {
+        if (selectedMoveIndex <= 1) selectedMoveIndex += 2;
+        sfxBeep();
+      }
     });
+
     document.getElementById("btn-left").addEventListener("click", () => {
       if (mode === "OVERWORLD") movePlayer(-1, 0, "LEFT");
+      if (mode === "BATTLE" && battleState === "SELECT_MOVE") {
+        if (selectedMoveIndex % 2 === 1) selectedMoveIndex -= 1;
+        sfxBeep();
+      }
     });
+
     document.getElementById("btn-right").addEventListener("click", () => {
       if (mode === "OVERWORLD") movePlayer(1, 0, "RIGHT");
+      if (mode === "BATTLE" && battleState === "SELECT_MOVE") {
+        if (selectedMoveIndex % 2 === 0) selectedMoveIndex += 1;
+        sfxBeep();
+      }
     });
+
     document.getElementById("btn-a").addEventListener("click", handleA);
     document.getElementById("btn-b").addEventListener("click", handleB);
     document.getElementById("btn-start").addEventListener("click", handleA);
@@ -910,16 +1052,32 @@
       if (e.key === "ArrowUp" || e.key === "w") {
         if (mode === "OVERWORLD") movePlayer(0, -1, "UP");
         if (mode === "GENDER") playerGender = "BOY";
+        if (mode === "BATTLE" && battleState === "SELECT_MOVE") {
+          if (selectedMoveIndex >= 2) selectedMoveIndex -= 2;
+          sfxBeep();
+        }
       }
       if (e.key === "ArrowDown" || e.key === "s") {
         if (mode === "OVERWORLD") movePlayer(0, 1, "DOWN");
         if (mode === "GENDER") playerGender = "GIRL";
+        if (mode === "BATTLE" && battleState === "SELECT_MOVE") {
+          if (selectedMoveIndex <= 1) selectedMoveIndex += 2;
+          sfxBeep();
+        }
       }
       if (e.key === "ArrowLeft" || e.key === "a") {
         if (mode === "OVERWORLD") movePlayer(-1, 0, "LEFT");
+        if (mode === "BATTLE" && battleState === "SELECT_MOVE") {
+          if (selectedMoveIndex % 2 === 1) selectedMoveIndex -= 1;
+          sfxBeep();
+        }
       }
       if (e.key === "ArrowRight" || e.key === "d") {
         if (mode === "OVERWORLD") movePlayer(1, 0, "RIGHT");
+        if (mode === "BATTLE" && battleState === "SELECT_MOVE") {
+          if (selectedMoveIndex % 2 === 0) selectedMoveIndex += 1;
+          sfxBeep();
+        }
       }
       if (e.key === "z" || e.key === "Enter" || e.key === " ") handleA();
       if (e.key === "x" || e.key === "Escape") handleB();
