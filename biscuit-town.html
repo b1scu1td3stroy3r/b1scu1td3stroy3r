@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Biscuit Quest // Pallet Town</title>
+  <title>B1SCU1T TOWN // Retro Quest</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
     body {
@@ -394,14 +394,12 @@
     }
 
     function getCameraOffsets() {
-      // Screen is 160x144. Viewport center is at (80, 72).
       const pPixelX = playerX * TILE_SIZE + 8;
       const pPixelY = playerY * TILE_SIZE + 8;
 
       let camX = pPixelX - 80;
       let camY = pPixelY - 72;
 
-      // Clamp camera so it never scrolls beyond map bounds
       const maxCamX = (MAP_W * TILE_SIZE) - 160;
       const maxCamY = (MAP_H * TILE_SIZE) - 144;
 
@@ -415,7 +413,6 @@
       const px = (tx * TILE_SIZE) - camX;
       const py = (ty * TILE_SIZE) - camY;
 
-      // Discard tiles strictly outside viewport
       if (px < -16 || px > 160 || py < -16 || py > 144) return;
 
       if (tile === 0) {
@@ -454,31 +451,102 @@
       }
     }
 
-    function drawSprite(x, y, color, hat = false, female = false, camX = 0, camY = 0) {
+    function drawSprite(x, y, role = "BOY", dir = "DOWN", camX = 0, camY = 0) {
       const px = (x * TILE_SIZE) - camX;
       const py = (y * TILE_SIZE) - camY;
 
-      ctx.fillStyle = color;
-      ctx.fillRect(px + 5, py + 2, 6, 6);
-      if (female) {
+      if (px < -16 || px > 160 || py < -16 || py > 144) return;
+
+      if (role === "BOY") {
+        ctx.fillStyle = C3; 
+        ctx.fillRect(px + 4, py + 1, 8, 3);
+        ctx.fillRect(px + 3, py + 3, 3, 2);
+        
+        ctx.fillStyle = C0; 
+        ctx.fillRect(px + 5, py + 4, 6, 4);
         ctx.fillStyle = C3;
-        ctx.fillRect(px + 3, py + 3, 2, 5);
-        ctx.fillRect(px + 11, py + 3, 2, 5);
-        ctx.fillStyle = color;
-      }
-      if (hat) {
+        ctx.fillRect(px + 6, py + 5, 1, 2);
+        ctx.fillRect(px + 9, py + 5, 1, 2);
+
+        ctx.fillStyle = C3; 
+        ctx.fillRect(px + 3, py + 8, 10, 5);
+        ctx.fillStyle = C0; 
+        ctx.fillRect(px + 7, py + 8, 2, 5);
+
+        ctx.fillStyle = C2; 
+        ctx.fillRect(px + 5, py + 13, 2, 3);
+        ctx.fillRect(px + 9, py + 13, 2, 3);
+
+      } else if (role === "GIRL") {
+        ctx.fillStyle = C2;
+        ctx.fillRect(px + 3, py + 1, 10, 3);
         ctx.fillStyle = C3;
-        ctx.fillRect(px + 4, py + 1, 8, 2);
-        ctx.fillStyle = color;
+        ctx.fillRect(px + 2, py + 4, 2, 5);
+        ctx.fillRect(px + 12, py + 4, 2, 5);
+
+        ctx.fillStyle = C0;
+        ctx.fillRect(px + 4, py + 4, 8, 4);
+        ctx.fillStyle = C3;
+        ctx.fillRect(px + 6, py + 5, 1, 2);
+        ctx.fillRect(px + 9, py + 5, 1, 2);
+
+        ctx.fillStyle = C3;
+        ctx.fillRect(px + 4, py + 8, 8, 5);
+        ctx.fillStyle = C1;
+        ctx.fillRect(px + 4, py + 12, 8, 2);
+
+        ctx.fillStyle = C3;
+        ctx.fillRect(px + 5, py + 14, 2, 2);
+        ctx.fillRect(px + 9, py + 14, 2, 2);
+
+      } else if (role === "YOUNGSTER") {
+        ctx.fillStyle = C2;
+        ctx.fillRect(px + 4, py + 2, 8, 2);
+        ctx.fillStyle = C0;
+        ctx.fillRect(px + 5, py + 4, 6, 4);
+        ctx.fillStyle = C3;
+        ctx.fillRect(px + 6, py + 5, 1, 1);
+        ctx.fillRect(px + 9, py + 5, 1, 1);
+
+        ctx.fillStyle = C2;
+        ctx.fillRect(px + 4, py + 8, 8, 4);
+        ctx.fillStyle = C3;
+        ctx.fillRect(px + 5, py + 12, 6, 2);
+
+        ctx.fillStyle = C0;
+        ctx.fillRect(px + 5, py + 14, 2, 2);
+        ctx.fillRect(px + 9, py + 14, 2, 2);
+
+      } else if (role === "OAK") {
+        ctx.fillStyle = C1;
+        ctx.fillRect(px + 4, py + 1, 8, 3);
+        ctx.fillStyle = C0;
+        ctx.fillRect(px + 5, py + 3, 6, 5);
+        ctx.fillStyle = C3;
+        ctx.fillRect(px + 6, py + 5, 1, 2);
+        ctx.fillRect(px + 9, py + 5, 1, 2);
+
+        ctx.fillStyle = C0;
+        ctx.fillRect(px + 3, py + 8, 10, 6);
+        ctx.fillStyle = C2;
+        ctx.fillRect(px + 7, py + 8, 2, 4);
+        ctx.fillStyle = C3;
+        ctx.fillRect(px + 5, py + 14, 2, 2);
+        ctx.fillRect(px + 9, py + 14, 2, 2);
+
+      } else if (role === "BOSS") {
+        ctx.fillStyle = C3;
+        ctx.fillRect(px + 3, py + 1, 10, 4);
+        ctx.fillStyle = C0;
+        ctx.fillRect(px + 5, py + 5, 6, 2);
+        ctx.fillStyle = C3;
+        ctx.fillRect(px + 2, py + 7, 12, 7);
+        ctx.fillStyle = C2;
+        ctx.fillRect(px + 6, py + 8, 4, 6);
+        ctx.fillStyle = C3;
+        ctx.fillRect(px + 4, py + 14, 3, 2);
+        ctx.fillRect(px + 9, py + 14, 3, 2);
       }
-      ctx.fillStyle = C0;
-      ctx.fillRect(px + 6, py + 4, 1, 2);
-      ctx.fillRect(px + 9, py + 4, 1, 2);
-      ctx.fillStyle = color;
-      ctx.fillRect(px + 4, py + 8, 8, 5);
-      ctx.fillStyle = C3;
-      ctx.fillRect(px + 5, py + 13, 2, 3);
-      ctx.fillRect(px + 9, py + 13, 2, 3);
     }
 
     function drawDialogBox(lines) {
@@ -503,7 +571,7 @@
       ctx.fillRect(0, 0, 160, 144);
       ctx.fillStyle = C3;
       ctx.font = "12px 'Courier New', monospace";
-      ctx.fillText("BISCUIT QUEST", 26, 36);
+      ctx.fillText("B1SCU1T TOWN", 34, 36);
       ctx.font = "8px 'Courier New', monospace";
       ctx.fillText("RED / BLUE EDITION", 22, 50);
 
@@ -529,8 +597,8 @@
       ctx.fillText("Are you a BOY", 30, 34);
       ctx.fillText("or a GIRL?", 46, 46);
 
-      drawSprite(3, 4, C3, true, false, 0, 0);
-      drawSprite(6, 4, C2, false, true, 0, 0);
+      drawSprite(3, 4, "BOY", "DOWN", 0, 0);
+      drawSprite(6, 4, "GIRL", "DOWN", 0, 0);
 
       ctx.fillText(playerGender === "BOY" ? "> BOY" : "  BOY", 44, 94);
       ctx.fillText(playerGender === "GIRL" ? "> GIRL" : "  GIRL", 44, 108);
@@ -542,14 +610,12 @@
     function renderOverworld() {
       const { camX, camY } = getCameraOffsets();
 
-      // Render scrolling map tiles
       for (let y = 0; y < MAP_H; y++) {
         for (let x = 0; x < MAP_W; x++) {
           drawTile(map[y][x], x, y, camX, camY);
         }
       }
 
-      // Render Collectible Biscuits with camera offset
       biscuitItems.forEach(b => {
         if (!biscuitsCollected[b.id]) {
           const px = (b.x * TILE_SIZE) - camX;
@@ -561,18 +627,15 @@
         }
       });
 
-      // Render NPCs with camera offset
       npcs.forEach(npc => {
-        let col = C3;
-        if (npc.name === "Youngster") col = C2;
-        if (npc.name === "b1scu1td3stroy3r") col = C3;
-        drawSprite(npc.x, npc.y, col, npc.name === "Youngster", false, camX, camY);
+        let role = "YOUNGSTER";
+        if (npc.name === "Oak") role = "OAK";
+        if (npc.name === "b1scu1td3stroy3r") role = "BOSS";
+        drawSprite(npc.x, npc.y, role, npc.dir, camX, camY);
       });
 
-      // Render Player with camera offset
-      drawSprite(playerX, playerY, C3, playerGender === "BOY", playerGender === "GIRL", camX, camY);
+      drawSprite(playerX, playerY, playerGender, playerDir, camX, camY);
 
-      // Fixed HUD Overlay
       ctx.fillStyle = C0;
       ctx.fillRect(0, 0, 160, 14);
       ctx.fillStyle = C3;
@@ -738,7 +801,6 @@
       const nx = playerX + dx;
       const ny = playerY + dy;
 
-      // Strict boundary check inside map arrays
       if (nx >= 0 && nx < MAP_W && ny >= 0 && ny < MAP_H) {
         const tile = map[ny][nx];
         const hasNpc = npcs.some(n => n.x === nx && n.y === ny);
