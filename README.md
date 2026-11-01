@@ -32,13 +32,14 @@ Final-year **BSc (Honours) Computing & IT** student at **The Open University**, 
 - ☕ **Core Foundations:** Java (OOP, Generics, Object Serialization) — [Codecademy Profile](https://www.codecademy.com/users/b1scu1td3stroy3r/achievements)
 ---
 
-### 🍪 Featured Tooling & Research Labs
+### 🛡️ Security Tools & Proofs of Concept
 
-| Project | Domain | Tech Stack | Overview |
-| :--- | :--- | :--- | :--- |
-| [**shortbread**](https://github.com/b1scu1td3stroy3r/shortbread) | Defensive Auditing | Python, CLI | Fast terminal auditor verifying HTTP defence headers, HSTS, CSP, and transport security. |
-| [**custard-cream**](https://github.com/b1scu1td3stroy3r/custard-cream) | Cryptography & CTF | Python | Multi-layered string analyser and decoder supporting Base64, Hex, Binary, and hash signatures. |
-| [**jammy-dodger**](https://github.com/b1scu1td3stroy3r/jammy-dodger) | AppSec & Deserialisation | Java, Python | Demonstration lab illustrating Java `readObject()` object injection paired with Python payload delivery. |
+| Repository | Focus Area | Technology |
+| :--- | :--- | :--- |
+| **[jammy-dodger](https://github.com/b1scu1td3stroy3r/jammy-dodger)** | Java Deserialisation Lab & Gadget Inspection | Java / Bytecode |
+| **[pink-wafer](https://github.com/b1scu1td3stroy3r/pink-wafer)** | Multi-media Steganography Extraction & Injection | HTML5 / Typed Arrays |
+| **[custard-cream](https://github.com/b1scu1td3stroy3r/custard-cream)** | Cryptographic Ciphers & Hash Cracking Suite | Python / Web Crypto |
+| **[shortbread](https://github.com/b1scu1td3stroy3r/shortbread)** | Network Packet & HTTP Header Inspection | Python / Raw Sockets |
 
 ---
 
