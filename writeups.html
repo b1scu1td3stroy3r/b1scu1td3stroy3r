@@ -54,7 +54,7 @@
       transition: all 0.2s ease;
       cursor: pointer;
     }
-    .badge-btn:hover {
+    .badge-btn:hover, .badge-btn.active {
       background: #00ff66;
       color: #050807;
       font-weight: bold;
@@ -141,10 +141,10 @@
     <div class="entry-card" onclick="window.location.href='touch.html'">
       <div class="entry-header">
         <div>
-          <span class="tag">HTB Walkthrough</span>
-          <span class="entry-title">Hack The Box: Touch &mdash; Kiosk Breakout &amp; Peripheral State Exploitation</span>
+          <span class="tag">HTB</span>
+          <span class="entry-title">Hack The Box: Touch</span>
         </div>
-        <span class="entry-date">[2026-03]</span>
+        <span class="entry-date">[Nov 26]</span>
       </div>
       <p class="entry-desc">
         A full walkthrough of the HTB Touch machine: unauthenticated hardware API enumeration, peripheral status manipulation, escaping Windows Kiosk mode via Edge dialogues, and auditing MySQL administrative privileges.
