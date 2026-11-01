@@ -13,7 +13,7 @@
 <p align="center">
   <a href="https://b1scu1td3stroy3r.github.io/b1scu1td3stroy3r/writeups.html"><img src="https://img.shields.io/badge/%F0%9F%93%9D%20WRITE--UPS-RESEARCH_ARCHIVE-00aa44?style=for-the-badge&logoColor=white" alt="Security Write-ups"></a>&nbsp;&nbsp;<a href="https://b1scu1td3stroy3r.github.io/b1scu1td3stroy3r/arcade.html"><img src="https://img.shields.io/badge/%F0%9F%8E%AE%20ARCADE%20HUB-ALL_GAMES-333333?style=for-the-badge&logoColor=white" alt="Arcade Hub"></a>&nbsp;&nbsp;<a href="https://b1scu1td3stroy3r.github.io/b1scu1td3stroy3r/b1scu1td3stroy3r.html"><img src="https://img.shields.io/badge/%F0%9F%94%A5%20PLAY-B1SCU1TD3STROY3R-00ff66?style=for-the-badge&logoColor=black" alt="Play b1scu1td3stroy3r"></a>
 </p>
->
+
 
 ---
 
