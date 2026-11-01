@@ -1,26 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hack The Box: Touch - Walkthrough</title>
+  <title>Hack The Box: Touch &mdash; Walkthrough</title>
   <style>
     :root {
-      --bg: #0d1117;
-      --card-bg: #161b22;
-      --border: #30363d;
-      --text: #c9d1d9;
-      --heading: #f0f6fc;
-      --accent: #58a6ff;
-      --accent-green: #3fb950;
-      --code-bg: #0b0e14;
-      --badge-bg: #1f6feb26;
-      --badge-border: #388bfd66;
+      --htb-green: #9FEF00;
+      --htb-green-hover: #b4ff1a;
+      --htb-dark: #111927;
+      --htb-darker: #0B111A;
+      --htb-card: #141D2B;
+      --htb-border: #1E293B;
+      --htb-text: #94A3B8;
+      --htb-text-bright: #F8FAFC;
+      --htb-gray-muted: #64748B;
+      --code-bg: #070B11;
     }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--htb-darker);
+      color: var(--htb-text);
       line-height: 1.6;
       margin: 0;
       padding: 40px 20px;
@@ -29,46 +29,77 @@
       max-width: 900px;
       margin: 0 auto;
     }
+    /* Navigation Badge Button */
+    .nav-bar {
+      margin-bottom: 24px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .badge-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-color: rgba(159, 239, 0, 0.1);
+      color: var(--htb-green);
+      border: 1px solid rgba(159, 239, 0, 0.3);
+      padding: 8px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s ease-in-out;
+    }
+    .badge-btn:hover {
+      background-color: var(--htb-green);
+      color: var(--htb-darker);
+      border-color: var(--htb-green);
+      box-shadow: 0 0 12px rgba(159, 239, 0, 0.4);
+    }
     h1, h2, h3 {
-      color: var(--heading);
-      border-bottom: 1px solid var(--border);
+      color: var(--htb-text-bright);
+      border-bottom: 1px solid var(--htb-border);
       padding-bottom: 8px;
     }
     h1 {
       font-size: 2.2rem;
-      border-bottom: 2px solid var(--accent);
+      border-bottom: 2px solid var(--htb-green);
       margin-bottom: 24px;
+      letter-spacing: -0.5px;
     }
     h2 {
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       margin-top: 36px;
+      color: var(--htb-green);
     }
     h3 {
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       border-bottom: none;
       margin-top: 24px;
+      color: var(--htb-text-bright);
     }
     .skills-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 14px;
       margin: 20px 0;
     }
     .skill-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
+      background: var(--htb-card);
+      border: 1px solid var(--htb-border);
+      border-left: 3px solid var(--htb-green);
       border-radius: 6px;
       padding: 14px 16px;
     }
     .skill-card strong {
       display: block;
-      color: var(--accent-green);
+      color: var(--htb-text-bright);
       margin-bottom: 4px;
       font-size: 0.95rem;
     }
     .meta-box {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
+      background: var(--htb-card);
+      border: 1px solid var(--htb-border);
       border-radius: 8px;
       padding: 18px;
       margin-bottom: 24px;
@@ -78,37 +109,42 @@
     }
     .meta-item strong {
       display: block;
-      color: var(--accent);
-      font-size: 0.85em;
+      color: var(--htb-green);
+      font-size: 0.8em;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.8px;
+    }
+    .meta-item span {
+      color: var(--htb-text-bright);
+      font-size: 0.95rem;
     }
     code {
       font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
-      background: #21262d;
-      color: #79c0ff;
+      background: #1E293B;
+      color: var(--htb-green);
       padding: 2px 6px;
       border-radius: 4px;
       font-size: 0.9em;
     }
     pre {
       background: var(--code-bg);
-      border: 1px solid var(--border);
+      border: 1px solid var(--htb-border);
       border-radius: 6px;
       padding: 16px;
       overflow-x: auto;
     }
     pre code {
       background: none;
-      color: #e6edf3;
+      color: #E2E8F0;
       padding: 0;
       font-size: 0.88em;
     }
     blockquote {
-      border-left: 4px solid var(--accent);
+      border-left: 4px solid var(--htb-green);
       margin: 16px 0;
-      padding: 8px 16px;
-      background: var(--card-bg);
+      padding: 10px 16px;
+      background: var(--htb-card);
+      color: var(--htb-text-bright);
       border-radius: 0 6px 6px 0;
     }
     ol, ul {
@@ -121,6 +157,11 @@
 </head>
 <body>
   <div class="container">
+    <div class="nav-bar">
+      <a class="badge-btn" href="writeups.html">&#128221; Research &amp; Write-ups Hub</a>
+      <a class="badge-btn" href="arcade.html">&#127918; Arcade Hub</a>
+    </div>
+
     <h1>Hack The Box: Touch &mdash; Walkthrough</h1>
 
     <div class="meta-box">
@@ -216,14 +257,14 @@ curl -s -X POST http://10.129.91.231:8443/login/badge</code></pre>
     <p>The session spawned inside the locked-down <strong>HTB Airways Self Check-In</strong> interface. To escape the sandbox:</p>
     <ol>
       <li>With the scanner offline, clicking the troubleshooting help link directed to <code>https://support.nexionsystems.com/docreader/troubleshoot</code>, opening Microsoft Edge.</li>
-      <li>Used the browser's download and file open dialogs to spawn standard Windows File Explorer.</li>
+      <li>Used the browser's download and file open dialogues to spawn standard Windows File Explorer.</li>
       <li>Navigated to the Windows system binary directory to launch an interactive <code>powershell.exe</code> session.</li>
       <li>Retrieved the user flag from the <code>KioskUser</code> Desktop folder:</li>
     </ol>
     <pre><code>[REDACTED_USER_FLAG]</code></pre>
 
     <h2>5. Local Enumeration &amp; Internal Database Analysis</h2>
-    <p>Inspecting the kiosk application backend codebase at <code>C:\Program Files\HTB Airways\Kiosk\packages ackend\src\database\index.ts</code> revealed internal fallback credentials:</p>
+    <p>Inspecting the kiosk application backend codebase at <code>C:\Program Files\HTB Airways\Kiosk\packages\backend\src\database\index.ts</code> revealed internal fallback credentials:</p>
     <pre><code>const defaults = { 
   host: "127.0.0.1", 
   port: 3306, 
@@ -240,11 +281,9 @@ curl -s -X POST http://10.129.91.231:8443/login/badge</code></pre>
 
     <h2>6. Privilege Escalation Vector: Cleartext Batch Script</h2>
     <p>Inspecting maintenance files under <code>C:\ProgramData\HTB Airways\</code> identified a world-readable batch script, <code>refresh-dates.bat</code>:</p>
-    <pre><code>C:\ProgramData\HTB Airways> cat .
-efresh-dates.bat
+    <pre><code>C:\ProgramData\HTB Airways> cat .\refresh-dates.bat
 @echo off
-C:\MySQL in\mysql.exe -u root -pHTB@irw4ys_DB!2026 &lt; "C:\ProgramData\HTB Airways
-efresh-dates.sql" 2>nul</code></pre>
+C:\MySQL\bin\mysql.exe -u root -pHTB@irw4ys_DB!2026 &lt; "C:\ProgramData\HTB Airways\refresh-dates.sql" 2>nul</code></pre>
 
     <p>Using the exposed administrative credentials to authenticate to MySQL:</p>
     <pre><code>mysql.exe -u root -pHTB@irw4ys_DB!2026 -h 127.0.0.1 -P 3306</code></pre>
