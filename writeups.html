@@ -54,18 +54,10 @@
       transition: all 0.2s ease;
       cursor: pointer;
     }
-    .badge-btn:hover, .badge-btn.active {
+    .badge-btn:hover {
       background: #00ff66;
       color: #050807;
       font-weight: bold;
-    }
-
-    /* Filter Bar */
-    .filter-bar {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
     }
 
     /* Write-up Entry Cards */
@@ -73,6 +65,7 @@
       border: 1px solid #00aa44;
       background: #000c05;
       padding: 16px;
+      margin-top: 10px;
       margin-bottom: 14px;
       transition: all 0.2s ease;
       cursor: pointer;
@@ -100,13 +93,12 @@
     .tag {
       font-size: 9px;
       padding: 2px 5px;
-      border: 1px solid #00ff66;
+      border: 1px solid #ff3366;
+      color: #ff3366;
       border-radius: 2px;
       margin-right: 6px;
       text-transform: uppercase;
     }
-    .tag-ctf { border-color: #ff3366; color: #ff3366; }
-
     .entry-desc {
       font-size: 12px;
       color: #88ffb3;
@@ -115,7 +107,7 @@
     }
 
     .exit-bar {
-      margin-top: 20px;
+      margin-top: 24px;
       padding-top: 14px;
       border-top: 1px solid #004422;
       font-size: 11px;
@@ -132,7 +124,7 @@
     <header>
       <h1 style="font-size: 20px; letter-spacing: 1px;">OPERATOR RESEARCH ARCHIVE // WRITE-UPS</h1>
       <p style="font-size: 12px; color: #88ffb3; margin-top: 4px;">
-        Terence White [b1scu1td3stroy3r] // CTF Deconstructions &amp; Security Walkthroughs
+        Terence White [b1scu1td3stroy3r] // CTF Deconstructions &amp; Machine Walkthroughs
       </p>
 
       <div class="badge-bar">
@@ -145,77 +137,25 @@
       </div>
     </header>
 
-    <!-- Category Filters -->
-    <div class="filter-bar">
-      <button class="badge-btn active" onclick="filterCategory('ALL', this)">[ ALL REPORTS ]</button>
-      <button class="badge-btn" onclick="filterCategory('CTF', this)">🚩 CTF Walkthroughs</button>
+    <!-- Write-up Card -->
+    <div class="entry-card" onclick="window.location.href='touch.html'">
+      <div class="entry-header">
+        <div>
+          <span class="tag">HTB Walkthrough</span>
+          <span class="entry-title">Hack The Box: Touch &mdash; Kiosk Breakout &amp; Peripheral State Exploitation</span>
+        </div>
+        <span class="entry-date">[2026-03]</span>
+      </div>
+      <p class="entry-desc">
+        A full walkthrough of the HTB Touch machine: unauthenticated hardware API enumeration, peripheral status manipulation, escaping Windows Kiosk mode via Edge dialogues, and auditing MySQL administrative privileges.
+      </p>
     </div>
-
-    <!-- Article List Container -->
-    <div id="articlesList"></div>
 
     <div class="exit-bar">
       <a href="https://github.com/b1scu1td3stroy3r" target="_blank">&larr; Return to GitHub Profile</a>
       <span>|</span>
       <a href="arcade.html">&larr; Return to Arcade Hub</a>
-      <span>|</span>
-      <a href="touch.html">🚩 Direct Link: HTB Touch Walkthrough &rarr;</a>
     </div>
   </div>
-
-  <script>
-    const WRITEUPS = [
-      {
-        url: "touch.html",
-        category: "CTF",
-        tag: "tag-ctf",
-        categoryLabel: "HTB Walkthrough",
-        title: "Hack The Box: Touch — Kiosk Breakout & Peripheral State Exploitation",
-        date: "2026-03",
-        summary: "A complete walkthrough of the Touch lab: unauthenticated hardware API enumeration, peripheral toggling, escaping Windows Kiosk mode via Edge dialogues, and MySQL privilege auditing."
-      }
-    ];
-
-    let activeFilter = 'ALL';
-
-    function renderArticles() {
-      const container = document.getElementById('articlesList');
-      container.innerHTML = '';
-
-      const filtered = activeFilter === 'ALL' 
-        ? WRITEUPS 
-        : WRITEUPS.filter(w => w.category === activeFilter);
-
-      if (filtered.length === 0) {
-        container.innerHTML = '<p style="color: #88ffb3; font-size: 12px;">No write-ups found for this category filter.</p>';
-        return;
-      }
-
-      filtered.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'entry-card';
-        card.onclick = function() { window.location.href = item.url; };
-        card.innerHTML = 
-          '<div class="entry-header">' +
-            '<div>' +
-              '<span class="tag ' + item.tag + '">' + item.categoryLabel + '</span>' +
-              '<span class="entry-title">' + item.title + '</span>' +
-            '</div>' +
-            '<span class="entry-date">[' + item.date + ']</span>' +
-          '</div>' +
-          '<p class="entry-desc">' + item.summary + '</p>';
-        container.appendChild(card);
-      });
-    }
-
-    function filterCategory(cat, btn) {
-      activeFilter = cat;
-      document.querySelectorAll('.filter-bar .badge-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderArticles();
-    }
-
-    renderArticles();
-  </script>
 </body>
 </html>
