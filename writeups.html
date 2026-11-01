@@ -116,7 +116,7 @@
       margin-top: 6px;
     }
 
-    /* Document Reader Modal / Drawer */
+    /* Document Reader Modal */
     #readerModal {
       display: none;
       position: fixed;
@@ -196,7 +196,9 @@
         <a class="badge-btn" href="https://github.com/b1scu1td3stroy3r" target="_blank">🐙 GitHub Profile</a>
         <a class="badge-btn" href="https://app.hackthebox.com/public/users/2571595" target="_blank">🚩 Hack The Box</a>
         <a class="badge-btn" href="https://ctftime.org/user/237405" target="_blank">⏱️ CTFtime</a>
+        <a class="badge-btn" href="https://www.codecademy.com/users/b1scu1td3stroy3r/achievements" target="_blank">💻 Codecademy</a>
         <a class="badge-btn" href="arcade.html">🕹️ Arcade Hub</a>
+        <a class="badge-btn" href="touch.html">🎮 Touch Controls</a>
       </div>
     </header>
 
@@ -213,7 +215,8 @@
 
     <div class="exit-bar">
       <a href="arcade.html">&larr; Return to Arcade Hub</a> &nbsp;|&nbsp;
-      <a href="https://github.com/b1scu1td3stroy3r">&larr; View GitHub Profile</a>
+      <a href="touch.html">🎮 Mobile / Touch Controller</a> &nbsp;|&nbsp;
+      <a href="https://github.com/b1scu1td3stroy3r" target="_blank">&larr; View GitHub Profile</a>
     </div>
   </div>
 
@@ -264,7 +267,7 @@
         category: "CTF",
         tag: "tag-ctf",
         categoryLabel: "CTF Walkthrough",
-        title: "Object Serialization Traps: Exploiting Gadget Chains in Insecure Java Endpoints",
+        title: "Object Deserialisation Traps: Exploiting Gadget Chains in Insecure Java Endpoints",
         date: "2025-11",
         summary: "A technical breakdown of deserialisation attack surfaces: identifying ObjectInputStream readObject() invocations, stream magic bytes (0xAC ED), and custom gadget chains.",
         content: `
@@ -320,16 +323,16 @@
         const card = document.createElement('div');
         card.className = 'entry-card';
         card.onclick = () => openReader(item.id);
-        card.innerHTML = \`
+        card.innerHTML = `
           <div class="entry-header">
             <div>
-              <span class="tag \${item.tag}">\${item.categoryLabel}</span>
-              <span class="entry-title">\${item.title}</span>
+              <span class="tag ${item.tag}">${item.categoryLabel}</span>
+              <span class="entry-title">${item.title}</span>
             </div>
-            <span class="entry-date">[\${item.date}]</span>
+            <span class="entry-date">[${item.date}]</span>
           </div>
-          <p class="entry-desc">\${item.summary}</p>
-        \`;
+          <p class="entry-desc">${item.summary}</p>
+        `;
         container.appendChild(card);
       });
     }
@@ -346,12 +349,12 @@
       if (!article) return;
 
       const container = document.getElementById('readerContainer');
-      container.innerHTML = \`
-        <span class="tag \${article.tag}">\${article.categoryLabel}</span>
-        <h1 style="font-size: 20px; color: #00ffcc; margin: 10px 0 4px 0;">\${article.title}</h1>
-        <p style="font-size: 11px; color: #88ffb3; margin-bottom: 16px;">Author: Terence White [b1scu1td3stroy3r] // Published: \${article.date}</p>
-        <div class="reader-body">\${article.content}</div>
-      \`;
+      container.innerHTML = `
+        <span class="tag ${article.tag}">${article.categoryLabel}</span>
+        <h1 style="font-size: 20px; color: #00ffcc; margin: 10px 0 4px 0;">${article.title}</h1>
+        <p style="font-size: 11px; color: #88ffb3; margin-bottom: 16px;">Author: Terence White [b1scu1td3stroy3r] // Published: ${article.date}</p>
+        <div class="reader-body">${article.content}</div>
+      `;
 
       document.getElementById('readerModal').style.display = 'block';
     }
