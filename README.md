@@ -9,15 +9,11 @@
                                                                                     |___/            
 ```
 
+
 <p align="center">
-  <a href="https://b1scu1td3stroy3r.github.io/b1scu1td3stroy3r/">
-    <img src="https://img.shields.io/badge/%F0%9F%8E%AE%20ARCADE%20HUB-ALL_GAMES-333333?style=for-the-badge&logoColor=white" alt="Arcade Hub">
-  </a>
-  &nbsp;&nbsp;
-  <a href="https://b1scu1td3stroy3r.github.io/b1scu1td3stroy3r/b1scu1td3stroy3r.html">
-    <img src="https://img.shields.io/badge/%F0%9F%94%A5%20PLAY-b1scu1td3stroy3r-00ff66?style=for-the-badge&logoColor=black" alt="Play b1scu1td3stroy3r">
-  </a>
+  <a href="https://b1scu1td3stroy3r.github.io/b1scu1td3stroy3r/writeups.html"><img src="https://img.shields.io/badge/%F0%9F%93%9D%20WRITE--UPS-RESEARCH_ARCHIVE-00aa44?style=for-the-badge&logoColor=white" alt="Security Write-ups"></a>&nbsp;&nbsp;<a href="https://b1scu1td3stroy3r.github.io/b1scu1td3stroy3r/arcade.html"><img src="https://img.shields.io/badge/%F0%9F%8E%AE%20ARCADE%20HUB-ALL_GAMES-333333?style=for-the-badge&logoColor=white" alt="Arcade Hub"></a>&nbsp;&nbsp;<a href="https://b1scu1td3stroy3r.github.io/b1scu1td3stroy3r/b1scu1td3stroy3r.html"><img src="https://img.shields.io/badge/%F0%9F%94%A5%20PLAY-B1SCU1TD3STROY3R-00ff66?style=for-the-badge&logoColor=black" alt="Play b1scu1td3stroy3r"></a>
 </p>
+>
 
 ---
 
@@ -30,6 +26,7 @@ Final-year **BSc (Honours) Computing & IT** student at **The Open University**, 
 - 🚩 **Offensive Labs:** [Hack The Box Profile](https://app.hackthebox.com/public/users/2571595)
 - ⏱️ **Competitive CTF:** [CTFtime Profile](https://ctftime.org/user/237405)
 - 💻 **Core Foundations:** Java (OOP & Deserialisation), Python, Bash & HTML5 — [Codecademy Verified Achievements](https://www.codecademy.com/users/b1scu1td3stroy3r/achievements)
+- 📝 **Technical Publications:** [Security Research & CTF Archive](https://b1scu1td3stroy3r.github.io/b1scu1td3stroy3r/writeups.html)
 ---
 
 ### 🛡️ Security Tools & Proofs of Concept
