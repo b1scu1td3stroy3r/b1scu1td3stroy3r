@@ -229,7 +229,6 @@
   </div>
 
   <script>
-    // Write-up Database
     const WRITEUPS = [
       {
         id: "pink-wafer-stego",
@@ -239,28 +238,23 @@
         title: "Dissecting Trailing Delimiters and LSB RGB Planes in Client-Side Steganography",
         date: "2026-03",
         summary: "An engineering post-mortem on the pink-wafer research engine: implementing raw binary IEND / EOI trailing byte parsing and lossless RGB canvas bit manipulation directly in browser JavaScript.",
-        content: `
-          <h2>Overview & Objective</h2>
-          <p>The goal of <code>pink-wafer</code> was to build a zero-dependency steganographic analysis and injection lab capable of executing entirely in the client-side browser context without backend infrastructure.</p>
-
-          <h2>Technical Challenges & Architecture</h2>
-          <h3>1. Trailing-Byte (EOF) Demarcation</h3>
-          <p>Standard media files declare explicit end-of-stream markers:</p>
-          <ul>
-            <li><strong>PNG:</strong> Concludes with the 8-byte <code>IEND</code> chunk: <code>49 45 4E 44 AE 42 60 82</code>.</li>
-            <li><strong>JPEG:</strong> Terminated by the End of Image (EOI) marker: <code>FF D9</code>.</li>
-            <li><strong>GIF:</strong> Closes on standard trailer byte <code>0x3B</code>.</li>
-          </ul>
-          <p>By reading the underlying <code>ArrayBuffer</code> via a <code>Uint8Array</code>, <code>pink-wafer</code> scans past these definitive byte offsets to extract unindexed trailing payloads without altering visual render pipelines.</p>
-
-          <h3>2. Spatial LSB Bitstream Encoding</h3>
-          <p>For image carriers, data is embedded across the least significant bits of consecutive Red, Green, and Blue subpixels, leaving Alpha untouched to prevent unexpected transparency artefacts:</p>
-          <pre><code>data[i] = (data[i] & ~1) | (flagBit & 1);</code></pre>
-          <p>A null terminator byte (<code>0x00</code>) is appended to terminate the payload during retrieval.</p>
-
-          <h2>Key Findings</h2>
-          <p>Client-side typed arrays provide adequate processing throughput for media files up to 50MB, proving that dedicated CTF digital forensics tooling can run portably in modern browsers without native binaries.</p>
-        `
+        content: "<h2>Overview & Objective</h2>" +
+                 "<p>The goal of <code>pink-wafer</code> was to build a zero-dependency steganographic analysis and injection lab capable of executing entirely in the client-side browser context without backend infrastructure.</p>" +
+                 "<h2>Technical Challenges & Architecture</h2>" +
+                 "<h3>1. Trailing-Byte (EOF) Demarcation</h3>" +
+                 "<p>Standard media files declare explicit end-of-stream markers:</p>" +
+                 "<ul>" +
+                   "<li><strong>PNG:</strong> Concludes with the 8-byte <code>IEND</code> chunk: <code>49 45 4E 44 AE 42 60 82</code>.</li>" +
+                   "<li><strong>JPEG:</strong> Terminated by the End of Image (EOI) marker: <code>FF D9</code>.</li>" +
+                   "<li><strong>GIF:</strong> Closes on standard trailer byte <code>0x3B</code>.</li>" +
+                 "</ul>" +
+                 "<p>By reading the underlying <code>ArrayBuffer</code> via a <code>Uint8Array</code>, <code>pink-wafer</code> scans past these definitive byte offsets to extract unindexed trailing payloads without altering visual render pipelines.</p>" +
+                 "<h3>2. Spatial LSB Bitstream Encoding</h3>" +
+                 "<p>For image carriers, data is embedded across the least significant bits of consecutive Red, Green, and Blue subpixels, leaving Alpha untouched to prevent unexpected transparency artefacts:</p>" +
+                 "<pre><code>data[i] = (data[i] & ~1) | (flagBit & 1);</code></pre>" +
+                 "<p>A null terminator byte (<code>0x00</code>) is appended to terminate the payload during retrieval.</p>" +
+                 "<h2>Key Findings</h2>" +
+                 "<p>Client-side typed arrays provide adequate processing throughput for media files up to 50MB, proving that dedicated CTF digital forensics tooling can run portably in modern browsers without native binaries.</p>"
       },
       {
         id: "java-deserialisation",
@@ -270,17 +264,13 @@
         title: "Object Deserialisation Traps: Exploiting Gadget Chains in Insecure Java Endpoints",
         date: "2025-11",
         summary: "A technical breakdown of deserialisation attack surfaces: identifying ObjectInputStream readObject() invocations, stream magic bytes (0xAC ED), and custom gadget chains.",
-        content: `
-          <h2>Vulnerability Analysis</h2>
-          <p>When an application deserialises untrusted byte streams using standard Java object streaming, arbitrary classes available on the application classpath can be instantiated before verification takes place.</p>
-
-          <h2>Payload Inspection</h2>
-          <p>Every serialized Java object stream begins with a standard two-byte magic header:</p>
-          <pre><code>AC ED 00 05 (Magic Number + Stream Version)</code></pre>
-
-          <h2>Mitigation & Safe Architecture</h2>
-          <p>Implementing explicit allow-list filtering with <code>ObjectInputFilter</code> (introduced in JEP 290) ensures that only explicitly sanctioned data classes are reconstructed.</p>
-        `
+        content: "<h2>Vulnerability Analysis</h2>" +
+                 "<p>When an application deserialises untrusted byte streams using standard Java object streaming, arbitrary classes available on the application classpath can be instantiated before verification takes place.</p>" +
+                 "<h2>Payload Inspection</h2>" +
+                 "<p>Every serialized Java object stream begins with a standard two-byte magic header:</p>" +
+                 "<pre><code>AC ED 00 05 (Magic Number + Stream Version)</code></pre>" +
+                 "<h2>Mitigation & Safe Architecture</h2>" +
+                 "<p>Implementing explicit allow-list filtering with <code>ObjectInputFilter</code> (introduced in JEP 290) ensures that only explicitly sanctioned data classes are reconstructed.</p>"
       },
       {
         id: "relational-normalisation",
@@ -290,17 +280,13 @@
         title: "Database Normalisation & Integrity Constraints for High-Concurrency Architectures",
         date: "2025-05",
         summary: "A de-scenarioed technical case study examining Third Normal Form (3NF) decomposition, index optimisation, and foreign key integrity constraints under concurrent write loads.",
-        content: `
-          <h2>Abstract</h2>
-          <p>This case study analyses the trade-offs between Boyce-Codd / 3rd Normal Form (3NF) data integrity and query throughput in relational database management systems.</p>
-
-          <h2>Normalisation Progression</h2>
-          <h3>1. Anomaly Resolution</h3>
-          <p>Eliminating update, insertion, and deletion anomalies through functional dependency decomposition prevents data drift across distributed records.</p>
-
-          <h3>2. Composite Key Optimisation</h3>
-          <p>Designing surrogate integer primary keys alongside unique compound indexes balances join performance with ACID consistency guarantees.</p>
-        `
+        content: "<h2>Abstract</h2>" +
+                 "<p>This case study analyses the trade-offs between Boyce-Codd / 3rd Normal Form (3NF) data integrity and query throughput in relational database management systems.</p>" +
+                 "<h2>Normalisation Progression</h2>" +
+                 "<h3>1. Anomaly Resolution</h3>" +
+                 "<p>Eliminating update, insertion, and deletion anomalies through functional dependency decomposition prevents data drift across distributed records.</p>" +
+                 "<h3>2. Composite Key Optimisation</h3>" +
+                 "<p>Designing surrogate integer primary keys alongside unique compound indexes balances join performance with ACID consistency guarantees.</p>"
       }
     ];
 
@@ -322,17 +308,16 @@
       filtered.forEach(item => {
         const card = document.createElement('div');
         card.className = 'entry-card';
-        card.onclick = () => openReader(item.id);
-        card.innerHTML = `
-          <div class="entry-header">
-            <div>
-              <span class="tag ${item.tag}">${item.categoryLabel}</span>
-              <span class="entry-title">${item.title}</span>
-            </div>
-            <span class="entry-date">[${item.date}]</span>
-          </div>
-          <p class="entry-desc">${item.summary}</p>
-        `;
+        card.onclick = function() { openReader(item.id); };
+        card.innerHTML = 
+          '<div class="entry-header">' +
+            '<div>' +
+              '<span class="tag ' + item.tag + '">' + item.categoryLabel + '</span>' +
+              '<span class="entry-title">' + item.title + '</span>' +
+            '</div>' +
+            '<span class="entry-date">[' + item.date + ']</span>' +
+          '</div>' +
+          '<p class="entry-desc">' + item.summary + '</p>';
         container.appendChild(card);
       });
     }
@@ -349,12 +334,11 @@
       if (!article) return;
 
       const container = document.getElementById('readerContainer');
-      container.innerHTML = `
-        <span class="tag ${article.tag}">${article.categoryLabel}</span>
-        <h1 style="font-size: 20px; color: #00ffcc; margin: 10px 0 4px 0;">${article.title}</h1>
-        <p style="font-size: 11px; color: #88ffb3; margin-bottom: 16px;">Author: Terence White [b1scu1td3stroy3r] // Published: ${article.date}</p>
-        <div class="reader-body">${article.content}</div>
-      `;
+      container.innerHTML = 
+        '<span class="tag ' + article.tag + '">' + article.categoryLabel + '</span>' +
+        '<h1 style="font-size: 20px; color: #00ffcc; margin: 10px 0 4px 0;">' + article.title + '</h1>' +
+        '<p style="font-size: 11px; color: #88ffb3; margin-bottom: 16px;">Author: Terence White [b1scu1td3stroy3r] // Published: ' + article.date + '</p>' +
+        '<div class="reader-body">' + article.content + '</div>';
 
       document.getElementById('readerModal').style.display = 'block';
     }
