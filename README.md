@@ -29,7 +29,7 @@ Final-year **BSc (Honours) Computing & IT** student at **The Open University**, 
 - 📜 **Verified Credentials:** [Credly Profile](https://www.credly.com/users/terry_white)
 - 🚩 **Offensive Labs:** [Hack The Box Profile](https://app.hackthebox.com/public/users/2571595)
 - ⏱️ **Competitive CTF:** [CTFtime Profile](https://ctftime.org/user/237405)
-- ☕ **Core Foundations:** Java (OOP, Generics, Object Serialization) — [Codecademy Profile](https://www.codecademy.com/users/b1scu1td3stroy3r/achievements)
+- 💻 **Core Foundations:** Java (OOP & Deserialisation), Python, Bash & HTML5 — [Codecademy Verified Achievements](https://www.codecademy.com/users/b1scu1td3stroy3r/achievements)
 ---
 
 ### 🛡️ Security Tools & Proofs of Concept
@@ -56,4 +56,4 @@ Final-year **BSc (Honours) Computing & IT** student at **The Open University**, 
 [![Hack The Box](https://img.shields.io/badge/b1scu1td3stroy3r-9FEF00?style=flat&logo=hackthebox&logoColor=black)](https://app.hackthebox.com/public/users/2571595)
 [![CTFtime](https://img.shields.io/badge/CTFtime-b1scu1td3stroy3r-E63946?style=flat&logo=flag&logoColor=white)](https://ctftime.org/user/237405)
 [![GitHub](https://img.shields.io/badge/GitHub-b1scu1td3stroy3r-181717?style=flat&logo=github&logoColor=white)](https://github.com/b1scu1td3stroy3r)
-[![Codecademy](https://img.shields.io/badge/Codecademy-Java_Foundations-1F425B?style=flat&logo=codecademy&logoColor=white)](https://www.codecademy.com/users/b1scu1td3stroy3r/achievements)
+[![Codecademy](https://img.shields.io/badge/Codecademy-Verified_Skills-1F425B?style=flat&logo=codecademy&logoColor=white)](https://www.codecademy.com/users/b1scu1td3stroy3r/achievements)
