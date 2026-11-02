@@ -147,7 +147,7 @@
       border-color: #00aa44;
     }
 
-    /* Fixed Modal Window */
+    /* Modal Backdrop & Cards */
     .modal-backdrop {
       position: fixed;
       top: 0; left: 0; width: 100vw; height: 100vh;
@@ -299,7 +299,6 @@
     const canvas = document.getElementById('pinballCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Audio synthesizer
     let audioCtx = null;
     function initAudio() {
       if (!audioCtx) {
@@ -326,23 +325,19 @@
       } catch (e) {}
     }
 
-    // State Variables
     let score = 0;
     let ballsRemaining = 3;
     let isChargingPlunger = false;
     let plungerCharge = 0;
     let gameActive = false;
 
-    // Control flags
     let leftPressed = false;
     let rightPressed = false;
 
-    // Physical World Constants
     const GRAVITY = 0.22;
     const FRICTION = 0.994;
     const PLUNGER_REST_Y = 590;
 
-    // Ball definition
     const ball = {
       x: 433,
       y: PLUNGER_REST_Y - 9,
@@ -352,7 +347,6 @@
       inPlungerLane: true
     };
 
-    // Flippers
     const flippers = {
       left: {
         pivotX: 130,
@@ -374,7 +368,6 @@
       }
     };
 
-    // Biscuit Bumpers & Targets
     const bumpers = [
       { x: 140, y: 170, radius: 26, label: "JAMMIE", icon: "🍓", points: 250, color: "#ff3366", hitTimer: 0 },
       { x: 280, y: 170, radius: 26, label: "CUSTARD", icon: "🍪", points: 250, color: "#ffee55", hitTimer: 0 },
@@ -383,21 +376,36 @@
       { x: 340, y: 340, radius: 18, label: "HOBNOB", icon: "🌾", points: 150, color: "#00ffcc", hitTimer: 0 }
     ];
 
-    // Static line segments
+    // Enclosed boundary line geometry
     const lines = [
-      { x1: 20, y1: 70, x2: 20, y2: 620 },
+      // Left side wall
+      { x1: 20, y1: 80, x2: 20, y2: 620 },
+
+      // Plunger chute walls
       { x1: 416, y1: 120, x2: 416, y2: 620 },
-      { x1: 450, y1: 120, x2: 450, y2: 620 },
+      { x1: 450, y1: 80, x2: 450, y2: 620 },
       { x1: 416, y1: 610, x2: 450, y2: 610 },
-      { x1: 20, y1: 70, x2: 80, y2: 20 },
-      { x1: 80, y1: 20, x2: 360, y2: 20 },
-      { x1: 360, y1: 20, x2: 450, y2: 70 },
-      { x1: 450, y1: 70, x2: 450, y2: 120 },
+
+      // Curved upper boundary arch (completely closed ceiling)
+      { x1: 20, y1: 80, x2: 70, y2: 28 },
+      { x1: 70, y1: 28, x2: 150, y2: 12 },
+      { x1: 150, y1: 12, x2: 300, y2: 12 },
+      { x1: 300, y1: 12, x2: 390, y2: 28 },
+      { x1: 390, y1: 28, x2: 450, y2: 80 },
+
+      // Top chute arch deflector
+      { x1: 450, y1: 80, x2: 430, y2: 35 },
+      { x1: 430, y1: 35, x2: 380, y2: 22 },
+
+      // Lower flipper inlane guides
       { x1: 20, y1: 480, x2: 130, y2: 575 },
       { x1: 416, y1: 480, x2: 290, y2: 575 },
+
+      // Slingshots (triangles above flippers)
       { x1: 75, y1: 460, x2: 110, y2: 525, elastic: 1.4 },
       { x1: 110, y1: 525, x2: 75, y2: 525 },
       { x1: 75, y1: 525, x2: 75, y2: 460 },
+
       { x1: 345, y1: 460, x2: 310, y2: 525, elastic: 1.4 },
       { x1: 310, y1: 525, x2: 345, y2: 525 },
       { x1: 345, y1: 525, x2: 345, y2: 460 }
@@ -441,7 +449,6 @@
       document.getElementById('chargeDisplay').innerText = Math.round(plungerCharge * 100) + "%";
     }
 
-    // Keyboard bindings
     window.addEventListener('keydown', (e) => {
       if (!gameActive) return;
       if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') leftPressed = true;
@@ -467,7 +474,6 @@
       }
     });
 
-    // Touch controls
     function attachTouch(elem, onDown, onUp) {
       elem.addEventListener('pointerdown', (e) => { e.preventDefault(); onDown(); elem.classList.add('pressed'); });
       elem.addEventListener('pointerup', (e) => { e.preventDefault(); onUp(); elem.classList.remove('pressed'); });
@@ -484,9 +490,10 @@
       isChargingPlunger = false;
 
       if (plungerCharge > 0.08) {
-        ball.vy = -14 - (plungerCharge * 19);
-        ball.vx = -0.3 + (Math.random() * 0.2);
-        playSfx(180 + (plungerCharge * 240), 0.25, 'sawtooth', 0.08);
+        // Calibrated launch velocity
+        ball.vy = -10 - (plungerCharge * 9);
+        ball.vx = 0;
+        playSfx(200 + (plungerCharge * 200), 0.22, 'sawtooth', 0.08);
       }
       plungerCharge = 0;
       updateDashboard();
@@ -510,6 +517,7 @@
         updateDashboard();
       }
 
+      // Flipper actuation
       const flipSpeed = 0.28;
       const targetLeft = leftPressed ? flippers.left.upAngle : flippers.left.restAngle;
       const prevLeft = flippers.left.angle;
@@ -526,6 +534,7 @@
         playSfx(380, 0.03, 'square', 0.03);
       }
 
+      // Ball physics
       if (ball.inPlungerLane) {
         if (!isChargingPlunger && ball.vy === 0) {
           ball.x = 433;
@@ -536,16 +545,23 @@
           ball.vx = 0;
           ball.vy = 0;
         } else {
-          ball.vy += GRAVITY;
+          // Ball in vertical ascent up the chute
+          ball.vy += (GRAVITY * 0.7);
           ball.y += ball.vy;
-          ball.x += ball.vx;
 
-          if (ball.x < 425) ball.x = 425;
-          if (ball.x > 441) ball.x = 441;
+          // Wall guides
+          if (ball.x < 430) ball.x = 430;
+          if (ball.x > 436) ball.x = 436;
 
-          if (ball.y < 90) {
+          // Reached top curve arch: curve smoothly into playfield
+          if (ball.y < 55) {
+            ball.y = 55;
             ball.inPlungerLane = false;
-            ball.vx = -4 - (Math.random() * 2);
+            // Transfer vertical climb energy into leftward arc momentum
+            const speed = Math.abs(ball.vy);
+            ball.vx = -Math.max(6, speed * 0.75);
+            ball.vy = 1.5;
+            playSfx(320, 0.08, 'triangle', 0.05);
           }
         }
       } else {
@@ -556,11 +572,19 @@
         ball.x += ball.vx;
         ball.y += ball.vy;
 
-        if (ball.x > 416 && ball.y > 100 && ball.y < 160) {
-          ball.x = 414;
-          ball.vx = -Math.abs(ball.vx) - 1;
+        // Hard upper ceiling clamp: the ball can NEVER escape above the board
+        if (ball.y - ball.radius < 14) {
+          ball.y = 14 + ball.radius;
+          ball.vy = Math.abs(ball.vy) * 0.6;
         }
 
+        // Prevent ball from re-entering plunger lane from the top
+        if (ball.x > 416 && ball.y > 100 && ball.y < 160) {
+          ball.x = 414;
+          ball.vx = -Math.abs(ball.vx) - 1.5;
+        }
+
+        // Collisions with static line segments
         lines.forEach(l => {
           const pt = closestPointOnSegment(ball.x, ball.y, l.x1, l.y1, l.x2, l.y2);
           const d = dist(ball.x, ball.y, pt.x, pt.y);
@@ -587,6 +611,7 @@
           }
         });
 
+        // Collisions with Biscuit Bumpers
         bumpers.forEach(b => {
           if (b.hitTimer > 0) b.hitTimer--;
           const d = dist(ball.x, ball.y, b.x, b.y);
@@ -611,6 +636,7 @@
         collideFlipper(flippers.left);
         collideFlipper(flippers.right);
 
+        // Drain check
         if (ball.y > 670) {
           ballsRemaining--;
           updateDashboard();
@@ -682,6 +708,7 @@
         ctx.stroke();
       });
 
+      // One-way gate visual
       ctx.save();
       ctx.strokeStyle = '#00ffcc';
       ctx.lineWidth = 2;
@@ -691,6 +718,7 @@
       ctx.stroke();
       ctx.restore();
 
+      // Plunger spring & tip
       ctx.save();
       const plungerY = PLUNGER_REST_Y + (plungerCharge * 25);
       ctx.strokeStyle = '#ffee55';
@@ -704,6 +732,7 @@
       ctx.fillRect(423, plungerY - 6, 20, 6);
       ctx.restore();
 
+      // Bumpers
       bumpers.forEach(b => {
         ctx.save();
         ctx.beginPath();
@@ -727,6 +756,7 @@
       drawFlipper(flippers.left);
       drawFlipper(flippers.right);
 
+      // Ball
       ctx.save();
       ctx.beginPath();
       ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
