@@ -40,11 +40,20 @@ Final-year **BSc (Honours) Computing & IT** student at **The Open University**, 
 
 ---
 
-### 🛠️ Technical Competencies
+## 🛠️ Technical Competencies & Applied Skills
 
-- **Programming:** Python 3, Java (Object-Oriented SE), Bash / Shell scripting
-- **Security & Vulnerability Research:** OWASP Top 10, Deserialisation Attacks, Bytecode Stream Inspection, Defensive Configurations
-- **Platforms & Tooling:** Linux, Git Bash, Windows Subsystem, Hack The Box Labs
+### 🛡️ Offensive Security & Applied Research
+* **Reconnaissance & Enumeration:** Nmap (TCP/UDP, scripting engine), Dirb/ffuf directory fuzzing, unauthenticated REST API auditing.
+* **Vulnerability Analysis:** Insecure Direct Object References (IDOR), API parameter tampering, credential reuse vectors.
+* **Network & Packet Forensics:** Wire-level protocol inspection (PCAP), unencrypted stream reconstruction (FTP, cleartext HTTP).
+* **System Exploitation & Sandboxes:** Windows Kiosk UI breakout techniques, local process hijacking, interactive shell spawning via system dialogues.
+* **Privilege Escalation:** Linux Extended Capabilities auditing (`cap_setuid` abuse), hardcoded service configuration scraping, database privilege verification (`File_priv`).
+
+### 💻 Software Development & Interactive Systems
+* **Core Languages:** JavaScript (ES6+), HTML5/CSS3, Python, Java.
+* **Web Systems & Canvas:** HTML5 Canvas 2D engine development, physical vectors, dynamic impulse calculations, frame sub-stepping.
+* **Browser APIs:** Web Audio API synthesis (oscillators, envelopes), pointer/touch event handling across mobile and desktop.
+* **Environment & Tooling:** Linux CLI, Git/GitHub, Docker, WinRM, xfreerdp.
 
 ---
 
