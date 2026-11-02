@@ -147,7 +147,7 @@
       border-color: #00aa44;
     }
 
-    /* Modal Backdrop & Cards */
+    /* Modals */
     .modal-backdrop {
       position: fixed;
       top: 0; left: 0; width: 100vw; height: 100vh;
@@ -335,7 +335,7 @@
     let rightPressed = false;
 
     const GRAVITY = 0.22;
-    const FRICTION = 0.994;
+    const FRICTION = 0.995;
     const PLUNGER_REST_Y = 590;
 
     const ball = {
@@ -376,32 +376,31 @@
       { x: 340, y: 340, radius: 18, label: "HOBNOB", icon: "🌾", points: 150, color: "#00ffcc", hitTimer: 0 }
     ];
 
-    // Enclosed boundary line geometry
     const lines = [
-      // Left side wall
-      { x1: 20, y1: 80, x2: 20, y2: 620 },
+      // Left table boundary
+      { x1: 20, y1: 80, x2: 20, y2: 630 },
 
       // Plunger chute walls
-      { x1: 416, y1: 120, x2: 416, y2: 620 },
-      { x1: 450, y1: 80, x2: 450, y2: 620 },
+      { x1: 416, y1: 120, x2: 416, y2: 630 },
+      { x1: 450, y1: 80, x2: 450, y2: 630 },
       { x1: 416, y1: 610, x2: 450, y2: 610 },
 
-      // Curved upper boundary arch (completely closed ceiling)
+      // Curved upper boundary arch
       { x1: 20, y1: 80, x2: 70, y2: 28 },
-      { x1: 70, y1: 28, x2: 150, y2: 12 },
-      { x1: 150, y1: 12, x2: 300, y2: 12 },
-      { x1: 300, y1: 12, x2: 390, y2: 28 },
+      { x1: 70, y1: 28, x2: 150, y2: 14 },
+      { x1: 150, y1: 14, x2: 300, y2: 14 },
+      { x1: 300, y1: 14, x2: 390, y2: 28 },
       { x1: 390, y1: 28, x2: 450, y2: 80 },
 
-      // Top chute arch deflector
+      // Chute guide
       { x1: 450, y1: 80, x2: 430, y2: 35 },
       { x1: 430, y1: 35, x2: 380, y2: 22 },
 
-      // Lower flipper inlane guides
+      // Lower flipper guides
       { x1: 20, y1: 480, x2: 130, y2: 575 },
       { x1: 416, y1: 480, x2: 290, y2: 575 },
 
-      // Slingshots (triangles above flippers)
+      // Slingshots
       { x1: 75, y1: 460, x2: 110, y2: 525, elastic: 1.4 },
       { x1: 110, y1: 525, x2: 75, y2: 525 },
       { x1: 75, y1: 525, x2: 75, y2: 460 },
@@ -490,8 +489,7 @@
       isChargingPlunger = false;
 
       if (plungerCharge > 0.08) {
-        // Calibrated launch velocity
-        ball.vy = -10 - (plungerCharge * 9);
+        ball.vy = -9 - (plungerCharge * 8);
         ball.vx = 0;
         playSfx(200 + (plungerCharge * 200), 0.22, 'sawtooth', 0.08);
       }
@@ -534,7 +532,6 @@
         playSfx(380, 0.03, 'square', 0.03);
       }
 
-      // Ball physics
       if (ball.inPlungerLane) {
         if (!isChargingPlunger && ball.vy === 0) {
           ball.x = 433;
@@ -550,41 +547,56 @@
           ball.y += ball.vy;
 
           // Wall guides
-          if (ball.x < 430) ball.x = 430;
-          if (ball.x > 436) ball.x = 436;
+          if (ball.x < 425) ball.x = 425;
+          if (ball.x > 441) ball.x = 441;
 
-          // Reached top curve arch: curve smoothly into playfield
+          // Chute exit
           if (ball.y < 55) {
             ball.y = 55;
             ball.inPlungerLane = false;
-            // Transfer vertical climb energy into leftward arc momentum
             const speed = Math.abs(ball.vy);
-            ball.vx = -Math.max(6, speed * 0.75);
-            ball.vy = 1.5;
+            ball.vx = -Math.max(5, speed * 0.75);
+            ball.vy = 1.2;
             playSfx(320, 0.08, 'triangle', 0.05);
           }
         }
-      } else {
-        ball.vy += GRAVITY;
-        ball.vx *= FRICTION;
-        ball.vy *= FRICTION;
+        return;
+      }
 
-        ball.x += ball.vx;
-        ball.y += ball.vy;
+      // Continuous collision loop: 4 sub-steps per frame
+      const SUB_STEPS = 4;
+      const dtGravity = GRAVITY / SUB_STEPS;
+      const dtFriction = Math.pow(FRICTION, 1 / SUB_STEPS);
 
-        // Hard upper ceiling clamp: the ball can NEVER escape above the board
+      for (let step = 0; step < SUB_STEPS; step++) {
+        ball.vy += dtGravity;
+        ball.vx *= dtFriction;
+        ball.vy *= dtFriction;
+
+        ball.x += ball.vx / SUB_STEPS;
+        ball.y += ball.vy / SUB_STEPS;
+
+        // Hard table outer containment
+        if (ball.x - ball.radius < 20) {
+          ball.x = 20 + ball.radius;
+          ball.vx = Math.abs(ball.vx) * 0.65;
+        }
+        if (ball.x + ball.radius > 450) {
+          ball.x = 450 - ball.radius;
+          ball.vx = -Math.abs(ball.vx) * 0.65;
+        }
         if (ball.y - ball.radius < 14) {
           ball.y = 14 + ball.radius;
-          ball.vy = Math.abs(ball.vy) * 0.6;
+          ball.vy = Math.abs(ball.vy) * 0.65;
         }
 
-        // Prevent ball from re-entering plunger lane from the top
-        if (ball.x > 416 && ball.y > 100 && ball.y < 160) {
+        // Prevent entering plunger chute from top
+        if (ball.x > 414 && ball.y > 90 && ball.y < 160) {
           ball.x = 414;
-          ball.vx = -Math.abs(ball.vx) - 1.5;
+          ball.vx = -Math.abs(ball.vx) - 1;
         }
 
-        // Collisions with static line segments
+        // Segment collision
         lines.forEach(l => {
           const pt = closestPointOnSegment(ball.x, ball.y, l.x1, l.y1, l.x2, l.y2);
           const d = dist(ball.x, ball.y, pt.x, pt.y);
@@ -611,9 +623,8 @@
           }
         });
 
-        // Collisions with Biscuit Bumpers
+        // Bumper collision
         bumpers.forEach(b => {
-          if (b.hitTimer > 0) b.hitTimer--;
           const d = dist(ball.x, ball.y, b.x, b.y);
           if (d < ball.radius + b.radius) {
             const nx = (ball.x - b.x) / d;
@@ -622,32 +633,40 @@
             ball.x += nx * overlap;
             ball.y += ny * overlap;
 
-            const impulse = 9.5;
+            const impulse = 9.0;
             ball.vx = nx * impulse;
             ball.vy = ny * impulse;
 
-            score += b.points;
-            b.hitTimer = 12;
-            playSfx(750, 0.08, 'square', 0.07);
-            updateDashboard();
+            if (b.hitTimer <= 0) {
+              score += b.points;
+              b.hitTimer = 12;
+              playSfx(750, 0.08, 'square', 0.07);
+              updateDashboard();
+            }
           }
         });
 
+        // Flipper collision
         collideFlipper(flippers.left);
         collideFlipper(flippers.right);
+      }
 
-        // Drain check
-        if (ball.y > 670) {
-          ballsRemaining--;
-          updateDashboard();
-          playSfx(140, 0.4, 'sawtooth', 0.08);
+      // Decrement bumper flash timers once per frame
+      bumpers.forEach(b => {
+        if (b.hitTimer > 0) b.hitTimer--;
+      });
 
-          if (ballsRemaining > 0) {
-            resetBall();
-          } else {
-            gameActive = false;
-            showGameOver();
-          }
+      // Outlane drain check
+      if (ball.y > 670) {
+        ballsRemaining--;
+        updateDashboard();
+        playSfx(140, 0.4, 'sawtooth', 0.08);
+
+        if (ballsRemaining > 0) {
+          resetBall();
+        } else {
+          gameActive = false;
+          showGameOver();
         }
       }
     }
