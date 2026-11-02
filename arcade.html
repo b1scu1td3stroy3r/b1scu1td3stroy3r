@@ -1,17 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Operator Arcade // b1scu1td3stroy3r</title>
+  <title>Operator Arcade Directory // b1scu1td3stroy3r</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Courier New', Courier, monospace;
-      user-select: none;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
     body {
       background: #050807;
       color: #00ff66;
@@ -19,21 +13,21 @@
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
-      padding: 20px 16px;
+      padding: 24px 16px;
     }
     .crt::after {
       content: " ";
       display: block;
       position: fixed;
       top: 0; left: 0; bottom: 0; right: 0;
-      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 100, 0.03), rgba(0, 255, 100, 0.01), rgba(0, 100, 255, 0.03));
       z-index: 100;
       background-size: 100% 3px, 6px 100%;
       pointer-events: none;
     }
     .hub-container {
       width: 100%;
-      max-width: 860px;
+      max-width: 1080px;
       border: 1px solid #00ff66;
       background: #021107;
       padding: 24px;
@@ -42,13 +36,18 @@
     header {
       border-bottom: 1px solid #004422;
       padding-bottom: 16px;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 20px;
+      letter-spacing: 1.5px;
+      color: #00ff66;
     }
     .badge-bar {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-top: 12px;
+      margin-top: 14px;
     }
     .badge-btn {
       background: #001a0a;
@@ -58,141 +57,145 @@
       text-decoration: none;
       font-size: 11px;
       transition: all 0.2s ease;
+      cursor: pointer;
     }
     .badge-btn:hover {
       background: #00ff66;
       color: #050807;
       font-weight: bold;
     }
-    .game-grid {
+
+    /* 3-Column Arcade Grid */
+    .arcade-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 18px;
-      margin-top: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
     }
-    .game-card {
-      border: 1px solid #00aa44;
+    .card {
+      border: 1px solid #008833;
       background: #000c05;
-      padding: 20px;
-      text-decoration: none;
-      color: inherit;
+      padding: 18px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      border-radius: 4px;
+      min-height: 200px;
+      cursor: pointer;
       transition: all 0.2s ease;
     }
-    .game-card:hover {
+    .card:hover {
       border-color: #00ff66;
-      box-shadow: 0 0 16px rgba(0, 255, 102, 0.35);
+      box-shadow: 0 0 14px rgba(0, 255, 102, 0.3);
       transform: translateY(-2px);
     }
-    .status-tag {
-      font-size: 10px;
-      padding: 2px 6px;
+    .status-badge {
       align-self: flex-start;
-      margin-bottom: 10px;
       border: 1px solid #00ff66;
-      border-radius: 2px;
-      font-weight: bold;
       color: #00ff66;
-    }
-    .game-title {
-      font-size: 16px;
+      font-size: 9px;
+      padding: 2px 6px;
+      letter-spacing: 1px;
       margin-bottom: 8px;
-      color: #00ffcc;
     }
-    .game-desc {
+    .card h2 {
+      font-size: 15px;
+      color: #00ffcc;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .card p {
       font-size: 12px;
       color: #88ffb3;
-      line-height: 1.4;
+      line-height: 1.5;
+      flex-grow: 1;
       margin-bottom: 16px;
     }
     .launch-btn {
-      font-size: 12px;
-      font-weight: bold;
+      font-size: 11px;
       color: #00ff66;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+      letter-spacing: 0.5px;
     }
+    .card:hover .launch-btn {
+      color: #ffffff;
+      text-shadow: 0 0 6px #00ff66;
+    }
+
+    .exit-bar {
+      margin-top: 28px;
+      padding-top: 14px;
+      border-top: 1px solid #004422;
+      font-size: 11px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .exit-bar a { color: #00ff66; text-decoration: none; }
+    .exit-bar a:hover { text-decoration: underline; }
   </style>
 </head>
 <body class="crt">
   <div class="hub-container">
     <header>
-      <h1 style="font-size: 20px; letter-spacing: 1px;">OPERATOR ARCADE DIRECTORY</h1>
+      <h1>OPERATOR ARCADE DIRECTORY</h1>
       <p style="font-size: 12px; color: #88ffb3; margin-top: 4px;">
-        Terence White [b1scu1td3stroy3r] // Research Labs, Games & Interactive Proofs of Concept
+        Terence White [b1scu1td3stroy3r] // Research Labs, Games &amp; Interactive Proofs of Concept
       </p>
 
       <div class="badge-bar">
         <a class="badge-btn" href="https://github.com/b1scu1td3stroy3r" target="_blank">🐙 GitHub Profile</a>
-        <a class="badge-btn" href="https://www.credly.com/users/terry_white" target="_blank">📜 Credly</a>
+        <a class="badge-btn" href="https://www.credly.com/users/terence-white.764e5c8e" target="_blank">📜 Credly</a>
         <a class="badge-btn" href="https://app.hackthebox.com/public/users/2571595" target="_blank">🚩 Hack The Box</a>
         <a class="badge-btn" href="https://ctftime.org/user/237405" target="_blank">⏱️ CTFtime</a>
-        <a class="badge-btn" href="https://www.codecademy.com/users/b1scu1td3stroy3r" target="_blank">☕ Codecademy (Java)</a>
-        <a class="badge-btn" href="writeups.html">📝 Research & Write-ups</a>
+        <a class="badge-btn" href="https://www.codecademy.com/users/b1scu1td3stroy3r/achievements" target="_blank">💻 Codecademy (Java)</a>
+        <a class="badge-btn" href="writeups.html">📝 Research &amp; Write-ups</a>
       </div>
     </header>
 
-    <div class="game-grid">
-      <!-- Game 1: Header Breach Breakout -->
-      <a class="game-card" href="b1scu1td3stroy3r.html">
-        <div>
-          <span class="status-tag">ONLINE</span>
-          <h2 class="game-title">b1scu1td3stroy3r</h2>
-          <p class="game-desc">
-            Dual-paddle terminal firewall defence. Deflect malicious payloads to dismantle the target ASCII header before the host breaches.
-          </p>
-        </div>
+    <div class="arcade-grid">
+      <!-- Card 1: b1scu1td3stroy3r -->
+      <div class="card" onclick="window.location.href='b1scu1td3stroy3r.html'">
+        <span class="status-badge">ONLINE</span>
+        <h2>b1scu1td3stroy3r</h2>
+        <p>Dual-paddle terminal firewall defence. Deflect malicious payloads to dismantle the target ASCII header before the host breaches.</p>
         <span class="launch-btn">[ INITIALISE BREAKOUT ] &rarr;</span>
-      </a>
+      </div>
 
-      <!-- Game 2: Biscuit Town RPG -->
-      <a class="game-card" href="biscuit-town.html">
-        <div>
-          <span class="status-tag">ONLINE</span>
-          <h2 class="game-title">B1SCU1T TOWN</h2>
-          <p class="game-desc">
-            Retro Game Boy 4-shade RPG. Explore Pallet Town, collect all 5 hidden biscuits, and challenge b1scu1td3stroy3r to a Pokémon-style duel.
-          </p>
-        </div>
+      <!-- Card 2: B1SCU1T TOWN -->
+      <div class="card" onclick="window.location.href='biscuit-town.html'">
+        <span class="status-badge">ONLINE</span>
+        <h2>B1SCU1T TOWN</h2>
+        <p>Retro Game Boy 4-shade RPG. Explore Pallet Town, collect all 5 hidden biscuits, and challenge b1scu1td3stroy3r to a Pok&eacute;mon-style duel.</p>
         <span class="launch-btn">[ INITIALISE TOWN ] &rarr;</span>
-      </a>
+      </div>
 
-      <!-- Game 3: B1SCU1T FIGHTER -->
-      <a class="game-card" href="b1scu1t-fighter.html">
-        <div>
-          <span class="status-tag">ONLINE</span>
-          <h2 class="game-title">B1SCU1T FIGHTER</h2>
-          <p class="game-desc">
-            Street Fighter-style 2D duel. Pick from 6 human-like crumb brawlers, battle down from 30 to 0 HP, and execute the fatal "DUNK HIM!" finisher.
-          </p>
-        </div>
+      <!-- Card 3: B1SCU1T FIGHTER -->
+      <div class="card" onclick="window.location.href='biscuit-fighter.html'">
+        <span class="status-badge">ONLINE</span>
+        <h2>B1SCU1T FIGHTER</h2>
+        <p>Street Fighter-style 2D duel. Pick from 6 human-like crumb brawlers, battle down from 30 to 0 HP, and execute the fatal &quot;DUNK HIM!&quot; finisher.</p>
         <span class="launch-btn">[ INITIALISE FIGHTER ] &rarr;</span>
-      </a>
+      </div>
 
-      <!-- Game 4: FLYING BISCUIT -->
-      <a class="game-card" href="flying-biscuit.html">
-        <div>
-          <span class="status-tag">ONLINE</span>
-          <h2 class="game-title">FLYING BISCUIT</h2>
-          <p class="game-desc">
-            Flappy-style aerial arcade! Flap your biscuit wings, dodge descending teacups and steam pillars, and score points without crumbling.
-          </p>
-        </div>
+      <!-- Card 4: FLYING BISCUIT -->
+      <div class="card" onclick="window.location.href='flying-biscuit.html'">
+        <span class="status-badge">ONLINE</span>
+        <h2>FLYING BISCUIT</h2>
+        <p>Flappy-style aerial arcade! Flap your biscuit wings, dodge descending teacups and steam pillars, and score points without crumbling.</p>
         <span class="launch-btn">[ INITIALISE FLIGHT ] &rarr;</span>
-      </a>
+      </div>
 
-      <!-- Game Card: Exploding Biscuits -->
-    <div class="game-card" onclick="window.location.href='exploding-biscuits.html'">
-      <div class="game-thumb">🍪</div>
-      <div class="game-title">Exploding Biscuits</div>
-      <div class="game-desc">
-        A 9x9 tactical puzzle fusing Minesweeper and Solitaire logic. Clear the matrix and isolate all 9 volatile British biscuits with 1 per row and column before your lives run out.
+      <!-- Card 5: EXPLODING BISCUITS -->
+      <div class="card" onclick="window.location.href='exploding-biscuits.html'">
+        <span class="status-badge">ONLINE</span>
+        <h2>EXPLODING BISCUITS</h2>
+        <p>A 9x9 tactical puzzle fusing Minesweeper and Solitaire logic. Clear the matrix and isolate all 9 volatile British biscuits with 1 per row and column before your lives run out.</p>
+        <span class="launch-btn">[ INITIALISE BISCUITS ] &rarr;</span>
       </div>
     </div>
+
+    <div class="exit-bar">
+      <a href="https://github.com/b1scu1td3stroy3r" target="_blank">&larr; Return to GitHub Profile</a>
+      <span>|</span>
+      <a href="writeups.html">&larr; Return to Write-ups Hub</a>
     </div>
   </div>
 </body>
