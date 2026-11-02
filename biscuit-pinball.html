@@ -292,7 +292,7 @@
     let score = 0;
     let ballsRemaining = 3;
     let isChargingPlunger = false;
-    let plungerCharge = 0; // 0 to 1
+    let plungerCharge = 0; // 0.0 to 1.0
     let gameActive = false;
 
     // Control flags
@@ -303,10 +303,12 @@
     const GRAVITY = 0.22;
     const FRICTION = 0.994;
 
+    const PLUNGER_REST_Y = 590;
+
     // Ball definition
     const ball = {
-      x: 436,
-      y: 560,
+      x: 433,
+      y: PLUNGER_REST_Y - 12,
       vx: 0,
       vy: 0,
       radius: 9,
@@ -348,14 +350,17 @@
     const lines = [
       // Outer boundaries
       { x1: 20, y1: 70, x2: 20, y2: 620 },
-      { x1: 416, y1: 140, x2: 416, y2: 620 }, // Plunger divider wall
-      { x1: 450, y1: 140, x2: 450, y2: 620 }, // Plunger right outer wall
+      { x1: 416, y1: 120, x2: 416, y2: 620 }, // Plunger divider wall
+      { x1: 450, y1: 120, x2: 450, y2: 620 }, // Plunger right outer wall
 
-      // Top curved arc approximation
+      // Solid floor under the plunger so ball CANNOT fall through
+      { x1: 416, y1: 610, x2: 450, y2: 610 },
+
+      // Top curved arc / launch chute
       { x1: 20, y1: 70, x2: 80, y2: 20 },
       { x1: 80, y1: 20, x2: 360, y2: 20 },
       { x1: 360, y1: 20, x2: 450, y2: 70 },
-      { x1: 450, y1: 70, x2: 450, y2: 140 },
+      { x1: 450, y1: 70, x2: 450, y2: 120 },
 
       // Lower flipper inlane guides
       { x1: 20, y1: 480, x2: 130, y2: 575 },
@@ -377,6 +382,7 @@
         audioCtx.resume();
       }
       gameActive = true;
+      resetBall();
     }
 
     function resetFullGame() {
@@ -389,12 +395,13 @@
     }
 
     function resetBall() {
-      ball.x = 434;
-      ball.y = 560;
+      ball.x = 433;
+      ball.y = PLUNGER_REST_Y - ball.radius;
       ball.vx = 0;
       ball.vy = 0;
       ball.inPlungerLane = true;
       plungerCharge = 0;
+      isChargingPlunger = false;
       updateDashboard();
     }
 
@@ -450,11 +457,13 @@
     attachTouch(btnPlunge, () => { if (ball.inPlungerLane) isChargingPlunger = true; }, () => { if (isChargingPlunger) releasePlunger(); });
 
     function releasePlunger() {
+      if (!isChargingPlunger) return;
       isChargingPlunger = false;
+
       if (plungerCharge > 0.08) {
-        ball.vy = -12 - (plungerCharge * 18);
-        ball.vx = -0.5 + (Math.random() * 0.4);
-        playSfx(180 + (plungerCharge * 200), 0.25, 'sawtooth', 0.08);
+        ball.vy = -14 - (plungerCharge * 19); // Launch power
+        ball.vx = -0.3 + (Math.random() * 0.2);
+        playSfx(180 + (plungerCharge * 240), 0.25, 'sawtooth', 0.08);
       }
       plungerCharge = 0;
       updateDashboard();
@@ -481,15 +490,13 @@
         updateDashboard();
       }
 
-      // Flipper physics
+      // Flipper actuation
       const flipSpeed = 0.28;
-      // Left flipper
       const targetLeft = leftPressed ? flippers.left.upAngle : flippers.left.restAngle;
       const prevLeft = flippers.left.angle;
       flippers.left.angle += (targetLeft - flippers.left.angle) * flipSpeed;
       flippers.left.angularVelocity = flippers.left.angle - prevLeft;
 
-      // Right flipper
       const targetRight = rightPressed ? flippers.right.upAngle : flippers.right.restAngle;
       const prevRight = flippers.right.angle;
       flippers.right.angle += (targetRight - flippers.right.angle) * flipSpeed;
@@ -500,86 +507,114 @@
         playSfx(380, 0.03, 'square', 0.03);
       }
 
-      // Apply Gravity and Air Drag
-      ball.vy += GRAVITY;
-      ball.vx *= FRICTION;
-      ball.vy *= FRICTION;
+      // Ball State Logic
+      if (ball.inPlungerLane) {
+        // While resting on plunger before launch
+        if (!isChargingPlunger && ball.vy === 0) {
+          ball.x = 433;
+          ball.y = PLUNGER_REST_Y - ball.radius;
+        } else if (isChargingPlunger) {
+          // Ball follows compressed plunger down
+          ball.x = 433;
+          ball.y = (PLUNGER_REST_Y + (plungerCharge * 25)) - ball.radius;
+          ball.vx = 0;
+          ball.vy = 0;
+        } else {
+          // In motion upward in the chute
+          ball.vy += GRAVITY;
+          ball.y += ball.vy;
+          ball.x += ball.vx;
 
-      // Update ball coords
-      ball.x += ball.vx;
-      ball.y += ball.vy;
+          // Wall containment in chute
+          if (ball.x < 425) ball.x = 425;
+          if (ball.x > 441) ball.x = 441;
 
-      // Check if ball left plunger lane
-      if (ball.inPlungerLane && (ball.x < 416 || ball.y < 120)) {
-        ball.inPlungerLane = false;
-      }
-
-      // Collisions with static boundary segments
-      lines.forEach(l => {
-        const pt = closestPointOnSegment(ball.x, ball.y, l.x1, l.y1, l.x2, l.y2);
-        const d = dist(ball.x, ball.y, pt.x, pt.y);
-        if (d < ball.radius) {
-          const nx = (ball.x - pt.x) / (d || 1);
-          const ny = (ball.y - pt.y) / (d || 1);
-          const overlap = ball.radius - d;
-          ball.x += nx * overlap;
-          ball.y += ny * overlap;
-
-          // Normal velocity reflection
-          const dot = ball.vx * nx + ball.vy * ny;
-          if (dot < 0) {
-            const elasticity = l.elastic || 0.65;
-            ball.vx -= (1 + elasticity) * dot * nx;
-            ball.vy -= (1 + elasticity) * dot * ny;
-            if (l.elastic) {
-              score += 25;
-              playSfx(520, 0.04, 'triangle');
-              updateDashboard();
-            } else {
-              playSfx(220, 0.02, 'sine', 0.02);
-            }
+          // Check if ball cleared the top curve into main field
+          if (ball.y < 90) {
+            ball.inPlungerLane = false;
+            ball.vx = -4 - (Math.random() * 2); // Push left into playfield
           }
         }
-      });
+      } else {
+        // Standard in-play physics
+        ball.vy += GRAVITY;
+        ball.vx *= FRICTION;
+        ball.vy *= FRICTION;
 
-      // Collisions with Biscuit Bumpers
-      bumpers.forEach(b => {
-        if (b.hitTimer > 0) b.hitTimer--;
-        const d = dist(ball.x, ball.y, b.x, b.y);
-        if (d < ball.radius + b.radius) {
-          const nx = (ball.x - b.x) / d;
-          const ny = (ball.y - b.y) / d;
-          const overlap = (ball.radius + b.radius) - d;
-          ball.x += nx * overlap;
-          ball.y += ny * overlap;
+        ball.x += ball.vx;
+        ball.y += ball.vy;
 
-          const dot = ball.vx * nx + ball.vy * ny;
-          const impulse = 9.5;
-          ball.vx = nx * impulse;
-          ball.vy = ny * impulse;
-
-          score += b.points;
-          b.hitTimer = 12;
-          playSfx(750, 0.08, 'square', 0.07);
-          updateDashboard();
+        // Prevent ball from re-entering plunger lane from the top
+        if (ball.x > 416 && ball.y > 100 && ball.y < 160) {
+          ball.x = 414;
+          ball.vx = -Math.abs(ball.vx) - 1;
         }
-      });
 
-      // Collisions with Both Flippers
-      collideFlipper(flippers.left);
-      collideFlipper(flippers.right);
+        // Collisions with static boundary segments
+        lines.forEach(l => {
+          const pt = closestPointOnSegment(ball.x, ball.y, l.x1, l.y1, l.x2, l.y2);
+          const d = dist(ball.x, ball.y, pt.x, pt.y);
+          if (d < ball.radius) {
+            const nx = (ball.x - pt.x) / (d || 1);
+            const ny = (ball.y - pt.y) / (d || 1);
+            const overlap = ball.radius - d;
+            ball.x += nx * overlap;
+            ball.y += ny * overlap;
 
-      // Drain check (Ball fell past the bottom between flippers)
-      if (ball.y > 670) {
-        ballsRemaining--;
-        updateDashboard();
-        playSfx(140, 0.4, 'sawtooth', 0.08);
+            const dot = ball.vx * nx + ball.vy * ny;
+            if (dot < 0) {
+              const elasticity = l.elastic || 0.65;
+              ball.vx -= (1 + elasticity) * dot * nx;
+              ball.vy -= (1 + elasticity) * dot * ny;
+              if (l.elastic) {
+                score += 25;
+                playSfx(520, 0.04, 'triangle');
+                updateDashboard();
+              } else {
+                playSfx(220, 0.02, 'sine', 0.02);
+              }
+            }
+          }
+        });
 
-        if (ballsRemaining > 0) {
-          resetBall();
-        } else {
-          gameActive = false;
-          showGameOver();
+        // Collisions with Biscuit Bumpers
+        bumpers.forEach(b => {
+          if (b.hitTimer > 0) b.hitTimer--;
+          const d = dist(ball.x, ball.y, b.x, b.y);
+          if (d < ball.radius + b.radius) {
+            const nx = (ball.x - b.x) / d;
+            const ny = (ball.y - b.y) / d;
+            const overlap = (ball.radius + b.radius) - d;
+            ball.x += nx * overlap;
+            ball.y += ny * overlap;
+
+            const impulse = 9.5;
+            ball.vx = nx * impulse;
+            ball.vy = ny * impulse;
+
+            score += b.points;
+            b.hitTimer = 12;
+            playSfx(750, 0.08, 'square', 0.07);
+            updateDashboard();
+          }
+        });
+
+        // Collisions with Flippers
+        collideFlipper(flippers.left);
+        collideFlipper(flippers.right);
+
+        // Drain check (Ball fell past the bottom between flippers)
+        if (ball.y > 670) {
+          ballsRemaining--;
+          updateDashboard();
+          playSfx(140, 0.4, 'sawtooth', 0.08);
+
+          if (ballsRemaining > 0) {
+            resetBall();
+          } else {
+            gameActive = false;
+            showGameOver();
+          }
         }
       }
     }
@@ -596,7 +631,6 @@
         ball.x = pt.x + nx * (ball.radius + 4);
         ball.y = pt.y + ny * (ball.radius + 4);
 
-        // Flipper tip velocity component
         const distFromPivot = dist(pt.x, pt.y, flip.pivotX, flip.pivotY);
         const surfaceVelX = -Math.sin(flip.angle) * flip.angularVelocity * distFromPivot;
         const surfaceVelY = Math.cos(flip.angle) * flip.angularVelocity * distFromPivot;
@@ -621,118 +655,3 @@
     function showGameOver() {
       document.getElementById('gameOverModal').style.display = 'flex';
       document.getElementById('endDetails').innerHTML = `
-        Your steel crumb ball succumbed to the drain!<br><br>
-        <strong>FINAL CADET SCORE:</strong> ${score.toLocaleString()} PTS
-      `;
-    }
-
-    // Render Table Loop
-    function render() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw table boundaries & lines
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = '#00aa44';
-      ctx.shadowColor = '#00ff66';
-      ctx.shadowBlur = 8;
-
-      lines.forEach(l => {
-        ctx.beginPath();
-        ctx.moveTo(l.x1, l.y1);
-        ctx.lineTo(l.x2, l.y2);
-        ctx.stroke();
-      });
-
-      // Draw Plunger spring in launch lane
-      ctx.save();
-      const plungerRestY = 600;
-      const plungerY = plungerRestY + (plungerCharge * 35);
-      ctx.strokeStyle = '#ffee55';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(433, 640);
-      ctx.lineTo(433, plungerY);
-      ctx.stroke();
-
-      // Plunger handle
-      ctx.fillStyle = '#ff3366';
-      ctx.fillRect(423, plungerY - 6, 20, 8);
-      ctx.restore();
-
-      // Draw Biscuit Bumpers
-      bumpers.forEach(b => {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-        ctx.fillStyle = b.hitTimer > 0 ? '#ffffff' : '#001a08';
-        ctx.fill();
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = b.color;
-        ctx.stroke();
-
-        // Icon & text
-        ctx.font = '14px monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(b.icon, b.x, b.y - 4);
-        ctx.font = '8px monospace';
-        ctx.fillStyle = '#88ffb3';
-        ctx.fillText(b.label, b.x, b.y + 12);
-        ctx.restore();
-      });
-
-      // Draw Flippers
-      drawFlipper(flippers.left);
-      drawFlipper(flippers.right);
-
-      // Draw Ball
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = '#00ffcc';
-      ctx.shadowBlur = 12;
-      ctx.fill();
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = '#00ffcc';
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    function drawFlipper(flip) {
-      const tipX = flip.pivotX + Math.cos(flip.angle) * flip.length;
-      const tipY = flip.pivotY + Math.sin(flip.angle) * flip.length;
-
-      ctx.save();
-      ctx.lineWidth = 8;
-      ctx.lineCap = 'round';
-      ctx.strokeStyle = '#00ff66';
-      ctx.shadowColor = '#00ff66';
-      ctx.shadowBlur = 10;
-      ctx.beginPath();
-      ctx.moveTo(flip.pivotX, flip.pivotY);
-      ctx.lineTo(tipX, tipY);
-      ctx.stroke();
-
-      // Pivot circle
-      ctx.fillStyle = '#ffee55';
-      ctx.beginPath();
-      ctx.arc(flip.pivotX, flip.pivotY, 6, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // Main Game Loop
-    function gameLoop() {
-      if (gameActive) {
-        updatePhysics();
-      }
-      render();
-      requestAnimationFrame(gameLoop);
-    }
-
-    updateDashboard();
-    gameLoop();
-  </script>
-</body>
-</html>
