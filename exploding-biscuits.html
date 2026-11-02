@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exploding Biscuits // Terminal Arcade</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
+    body {
+      background: #050807;
+      color: #00ff66;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px 12px;
+      user-select: none;
+    }
+    .crt::after {
+      content: " ";
+      display: block;
+      position: fixed;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 100, 0.03), rgba(0, 255, 100, 0.01), rgba(0, 100, 255, 0.03));
+      z-index: 100;
+      background-size: 100% 3px, 6px 100%;
+      pointer-events: none;
+    }
+    .game-container {
+      width: 100%;
+      max-width: 760px;
+      border: 1px solid #00ff66;
+      background: #021107;
+      padding: 20px;
+      box-shadow: 0 0 25px rgba(0, 255, 102, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    header {
+      width: 100%;
+      border-bottom: 1px solid #004422;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    h1 {
+      font-size: 20px;
+      letter-spacing: 1.5px;
+      color: #00ff66;
+      text-shadow: 0 0 6px #00ff66;
+    }
+    .badge-bar {
+      display: flex;
+      gap: 8px;
+    }
+    .badge-btn {
+      background: #001a0a;
+      border: 1px solid #00ff66;
+      color: #00ff66;
+      padding: 4px 10px;
+      text-decoration: none;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .badge-btn:hover, .badge-btn.active {
+      background: #00ff66;
+      color: #050807;
+      font-weight: bold;
+    }
+
+    /* Dashboard & Status */
+    .dashboard {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      background: #000c05;
+      border: 1px solid #005522;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      font-size: 12px;
+    }
+    .stat-box span {
+      color: #88ffb3;
+      display: block;
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+    .stat-box strong {
+      font-size: 14px;
+      color: #00ffcc;
+    }
+    .lives-display {
+      color: #ff3366 !important;
+      letter-spacing: 2px;
+    }
+
+    /* Controls & Instructions */
+    .control-panel {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .diff-selector {
+      display: flex;
+      gap: 6px;
+    }
+    .mode-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    /* 9x9 Matrix */
+    .grid-wrapper {
+      position: relative;
+      background: #000c05;
+      padding: 10px;
+      border: 1px solid #00aa44;
+      box-shadow: inset 0 0 15px rgba(0, 255, 102, 0.1);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      gap: 4px;
+      width: min(84vw, 480px);
+      height: min(84vw, 480px);
+    }
+    .cell {
+      background: #021a0d;
+      border: 1px solid #005522;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .cell:hover:not(.revealed) {
+      background: #053319;
+      border-color: #00ff66;
+    }
+    .cell.revealed {
+      background: #010804;
+      cursor: default;
+    }
+    .cell.safe-biscuit {
+      background: #002b11;
+      border-color: #00ff66;
+      box-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
+      animation: disarmPulse 1.2s infinite alternate;
+    }
+    .cell.exploded {
+      background: #33000d !important;
+      border-color: #ff3366 !important;
+      box-shadow: 0 0 12px rgba(255, 51, 102, 0.7);
+    }
+    .cell.flagged::after {
+      content: "🚩";
+      font-size: 13px;
+    }
+    .clue {
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .clue-0 { color: #004422; }
+    .clue-1 { color: #00ff66; }
+    .clue-2 { color: #00ffcc; }
+    .clue-3 { color: #ffcc00; }
+    .clue-4 { color: #ff9900; }
+    .clue-5, .clue-6, .clue-7, .clue-8 { color: #ff3366; }
+
+    /* Biscuit Tracker Tray */
+    .biscuit-tray {
+      margin-top: 16px;
+      width: 100%;
+      border: 1px solid #004422;
+      background: #010a05;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .tray-title {
+      font-size: 11px;
+      color: #88ffb3;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .biscuit-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      font-size: 11px;
+    }
+    .biscuit-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #446655;
+    }
+    .biscuit-item.disarmed {
+      color: #00ff66;
+      font-weight: bold;
+      text-shadow: 0 0 5px rgba(0, 255, 102, 0.4);
+    }
+
+    /* Modal End Screen */
+    .modal-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(3, 10, 6, 0.92);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      text-align: center;
+      border: 1px solid #00ff66;
+      box-shadow: 0 0 30px rgba(0, 255, 102, 0.3);
+      z-index: 50;
+    }
+    .modal-title {
+      font-size: 22px;
+      margin-bottom: 12px;
+      letter-spacing: 1.5px;
+    }
+    .modal-msg {
+      font-size: 12px;
+      color: #88ffb3;
+      margin-bottom: 20px;
+      line-height: 1.6;
+      max-width: 400px;
+    }
+
+    @keyframes disarmPulse {
+      from { transform: scale(0.96); }
+      to { transform: scale(1.04); }
+    }
+  </style>
+</head>
+<body class="crt">
+  <div class="game-container">
+    <header>
+      <div>
+        <h1>EXPLODING BISCUITS</h1>
+        <p style="font-size: 10px; color: #88ffb3; margin-top: 2px;">9 COLUMNS &bull; 9 ROWS &bull; 9 VOLATILE BISCUITS</p>
+      </div>
+      <div class="badge-bar">
+        <a class="badge-btn" href="arcade.html">&#127918; Arcade Hub</a>
+        <a class="badge-btn" href="writeups.html">&#128221; Write-ups</a>
+      </div>
+    </header>
+
+    <div class="dashboard">
+      <div class="stat-box">
+        <span>DEFUSED</span>
+        <strong id="disarmedCount">0 / 9</strong>
+      </div>
+      <div class="stat-box">
+        <span>LIVES</span>
+        <strong id="livesDisplay" class="lives-display">&hearts;&hearts;&hearts;</strong>
+      </div>
+      <div class="stat-box">
+        <span>TIME</span>
+        <strong id="timerDisplay">00:00</strong>
+      </div>
+      <div class="stat-box">
+        <span>SCORE</span>
+        <strong id="scoreDisplay">0</strong>
+      </div>
+    </div>
+
+    <div class="control-panel">
+      <div class="diff-selector">
+        <button class="badge-btn active" onclick="setDifficulty('easy', this)">EASY (3 LIVES &bull; 1x)</button>
+        <button class="badge-btn" onclick="setDifficulty('normal', this)">NORMAL (2 LIVES &bull; 2x)</button>
+        <button class="badge-btn" onclick="setDifficulty('insane', this)">INSANE (1 LIFE &bull; 3x)</button>
+      </div>
+      <div class="mode-toggle">
+        <span style="color: #88ffb3;">CLICK:</span>
+        <button id="flagToggleBtn" class="badge-btn" onclick="toggleFlagMode()">[ PROBE / STEP ]</button>
+      </div>
+    </div>
+
+    <div class="grid-wrapper">
+      <div id="grid" class="grid"></div>
+      
+      <!-- End of Game Overlay -->
+      <div id="modalOverlay" class="modal-overlay">
+        <h2 id="modalTitle" class="modal-title">MISSION COMPLETE</h2>
+        <div id="modalMsg" class="modal-msg"></div>
+        <button class="badge-btn" style="padding: 10px 24px; font-size: 13px;" onclick="initGame()">[ PLAY AGAIN ]</button>
+      </div>
+    </div>
+
+    <!-- 9 Biscuit Dossier Tracker -->
+    <div class="biscuit-tray">
+      <div class="tray-title">Target Biscuits to Disarm (1 per Col &amp; Row):</div>
+      <div id="biscuitList" class="biscuit-list"></div>
+    </div>
+  </div>
+
+  <script>
+    const BISCUITS = [
+      { name: "Custard Cream", icon: "🍪" },
+      { name: "Bourbon", icon: "🍫" },
+      { name: "Digestive", icon: "🍘" },
+      { name: "Rich Tea", icon: "☕" },
+      { name: "Jammie Dodger", icon: "🍓" },
+      { name: "Ginger Nut", icon: "⚡" },
+      { name: "Hobnob", icon: "🌾" },
+      { name: "Shortbread", icon: "🧈" },
+      { name: "Pink Wafer", icon: "🎀" }
+    ];
+
+    const DIFFICULTIES = {
+      easy: { lives: 3, mult: 1 },
+      normal: { lives: 2, mult: 2 },
+      insane: { lives: 1, mult: 3 }
+    };
+
+    let currentDifficulty = 'easy';
+    let lives = 3;
+    let gridData = [];
+    let biscuitPositions = [];
+    let disarmedIndices = new Set();
+    let gameOver = false;
+    let flagMode = false;
+    let timerSeconds = 0;
+    let timerInterval = null;
+    let score = 0;
+
+    function setDifficulty(diff, btn) {
+      if (currentDifficulty === diff && !gameOver) return;
+      currentDifficulty = diff;
+      document.querySelectorAll('.diff-selector .badge-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      initGame();
+    }
+
+    function toggleFlagMode() {
+      flagMode = !flagMode;
+      const btn = document.getElementById('flagToggleBtn');
+      if (flagMode) {
+        btn.innerText = "[ 🚩 FLAG MINE ]";
+        btn.classList.add('active');
+      } else {
+        btn.innerText = "[ PROBE / STEP ]";
+        btn.classList.remove('active');
+      }
+    }
+
+    // Audio synthesizer for CRT arcade SFX
+    const audioCtx = (window.AudioContext || window.webkitAudioContext) ? new (window.AudioContext || window.webkitAudioContext)() : null;
+    function playBeep(freq, duration, type='sine') {
+      if (!audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function initGame() {
+      clearInterval(timerInterval);
+      gameOver = false;
+      timerSeconds = 0;
+      score = 0;
+      disarmedIndices.clear();
+      document.getElementById('modalOverlay').style.display = 'none';
+      document.getElementById('timerDisplay').innerText = "00:00";
+      document.getElementById('scoreDisplay').innerText = "0";
+      document.getElementById('disarmedCount').innerText = "0 / 9";
+
+      lives = DIFFICULTIES[currentDifficulty].lives;
+      updateLivesDisplay();
+
+      generateSolitaireBoard();
+      renderGrid();
+      renderBiscuitTracker();
+
+      timerInterval = setInterval(() => {
+        if (!gameOver) {
+          timerSeconds++;
+          const mins = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+          const secs = String(timerSeconds % 60).padStart(2, '0');
+          document.getElementById('timerDisplay').innerText = `${mins}:${secs}`;
+        }
+      }, 1000);
+    }
+
+    function updateLivesDisplay() {
+      const hearts = '♥'.repeat(lives);
+      document.getElementById('livesDisplay').innerText = hearts || 'DEAD';
+    }
+
+    // Generates a valid 9x9 board with EXACTLY 1 biscuit per column and 1 biscuit per row
+    function generateSolitaireBoard() {
+      gridData = [];
+      biscuitPositions = [];
+
+      // 9 random rows, 1 per column (permutation of 0..8)
+      const rows = [0, 1, 2, 3, 4, 5, 6, 7, 8].sort(() => Math.random() - 0.5);
+
+      for (let col = 0; col < 9; col++) {
+        const row = rows[col];
+        biscuitPositions.push({ col, row, biscuit: BISCUITS[col] });
+      }
+
+      // Initialise empty cells
+      for (let r = 0; r < 9; r++) {
+        gridData[r] = [];
+        for (let c = 0; c < 9; c++) {
+          gridData[r][c] = {
+            row: r,
+            col: c,
+            isBiscuit: false,
+            biscuitData: null,
+            count: 0,
+            revealed: false,
+            flagged: false
+          };
+        }
+      }
+
+      // Plant the biscuits
+      biscuitPositions.forEach(pos => {
+        gridData[pos.row][pos.col].isBiscuit = true;
+        gridData[pos.row][pos.col].biscuitData = pos.biscuit;
+      });
+
+      // Calculate neighbor counts
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          if (!gridData[r][c].isBiscuit) {
+            let count = 0;
+            for (let dr = -1; dr <= 1; dr++) {
+              for (let dc = -1; dc <= 1; dc++) {
+                const nr = r + dr;
+                const nc = c + dc;
+                if (nr >= 0 && nr < 9 && nc >= 0 && nc < 9) {
+                  if (gridData[nr][nc].isBiscuit) count++;
+                }
+              }
+            }
+            gridData[r][c].count = count;
+          }
+        }
+      }
+    }
+
+    function renderGrid() {
+      const container = document.getElementById('grid');
+      container.innerHTML = '';
+
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          const cellEl = document.createElement('div');
+          cellEl.className = 'cell';
+          cellEl.id = `cell-${r}-${c}`;
+          
+          // Right click flags
+          cellEl.oncontextmenu = (e) => {
+            e.preventDefault();
+            handleFlag(r, c);
+          };
+
+          // Left click actions
+          cellEl.onclick = () => {
+            if (flagMode) {
+              handleFlag(r, c);
+            } else {
+              handleClick(r, c);
+            }
+          };
+
+          container.appendChild(cellEl);
+        }
+      }
+    }
+
+    function renderBiscuitTracker() {
+      const list = document.getElementById('biscuitList');
+      list.innerHTML = '';
+      biscuitPositions.forEach((pos, idx) => {
+        const item = document.createElement('div');
+        item.id = `tracker-${idx}`;
+        item.className = 'biscuit-item';
+        item.innerHTML = `<span>${pos.biscuit.icon}</span> <span>${pos.biscuit.name} (Col ${pos.col + 1})</span>`;
+        list.appendChild(item);
+      });
+    }
+
+    function handleFlag(r, c) {
+      if (gameOver) return;
+      const cell = gridData[r][c];
+      if (cell.revealed) return;
+
+      cell.flagged = !cell.flagged;
+      const el = document.getElementById(`cell-${r}-${c}`);
+      if (cell.flagged) {
+        el.classList.add('flagged');
+        playBeep(450, 0.05);
+      } else {
+        el.classList.remove('flagged');
+        playBeep(320, 0.05);
+      }
+    }
+
+    function handleClick(r, c) {
+      if (gameOver) return;
+      const cell = gridData[r][c];
+      if (cell.revealed || cell.flagged) return;
+
+      if (cell.isBiscuit) {
+        // Disarm or detonate
+        detonateOrDisarm(r, c);
+      } else {
+        // Safe cell reveal
+        playBeep(600, 0.04);
+        revealCell(r, c);
+        checkWinCondition();
+      }
+    }
+
+    function revealCell(r, c) {
+      const cell = gridData[r][c];
+      if (cell.revealed || cell.isBiscuit) return;
+
+      cell.revealed = true;
+      const el = document.getElementById(`cell-${r}-${c}`);
+      el.classList.add('revealed');
+
+      if (cell.count > 0) {
+        el.innerHTML = `<span class="clue clue-${cell.count}">${cell.count}</span>`;
+      } else {
+        el.innerHTML = `<span class="clue clue-0">&middot;</span>`;
+        // Flood fill empty zones
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            const nr = r + dr;
+            const nc = c + dc;
+            if (nr >= 0 && nr < 9 && nc >= 0 && nc < 9) {
+              if (!gridData[nr][nc].revealed && !gridData[nr][nc].flagged) {
+                revealCell(nr, nc);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    function detonateOrDisarm(r, c) {
+      const cell = gridData[r][c];
+      const el = document.getElementById(`cell-${r}-${c}`);
+
+      // Identifying index in biscuit list
+      const idx = biscuitPositions.findIndex(b => b.row === r && b.col === c);
+
+      if (!disarmedIndices.has(idx)) {
+        disarmedIndices.add(idx);
+        lives--;
+        updateLivesDisplay();
+
+        // Reveal safe disarmed biscuit
+        cell.revealed = true;
+        el.classList.add('revealed', 'safe-biscuit');
+        el.innerHTML = cell.biscuitData.icon;
+
+        // Update Tracker
+        const trackerItem = document.getElementById(`tracker-${idx}`);
+        if (trackerItem) trackerItem.classList.add('disarmed');
+        document.getElementById('disarmedCount').innerText = `${disarmedIndices.size} / 9`;
+
+        if (lives > 0) {
+          playBeep(220, 0.25, 'sawtooth');
+          alertOverlay(`⚠️ BISCUIT TRIGGERED! 1 Life Lost. ${lives} remaining. Biscuit neutralized.`);
+        } else {
+          el.classList.add('exploded');
+          playBeep(110, 0.6, 'sawtooth');
+          endGame(false);
+          return;
+        }
+      }
+      checkWinCondition();
+    }
+
+    function alertOverlay(text) {
+      // Subtle pulse indication on the grid border
+      const grid = document.querySelector('.grid-wrapper');
+      grid.style.borderColor = '#ff3366';
+      setTimeout(() => { grid.style.borderColor = '#00aa44'; }, 300);
+    }
+
+    function checkWinCondition() {
+      // Player wins if all 72 non-biscuit cells are cleared OR all 9 biscuits are accurately disarmed/found
+      let nonBiscuitUnrevealed = 0;
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          if (!gridData[r][c].isBiscuit && !gridData[r][c].revealed) {
+            nonBiscuitUnrevealed++;
+          }
+        }
+      }
+
+      if (nonBiscuitUnrevealed === 0 || disarmedIndices.size === 9) {
+        endGame(true);
+      }
+    }
+
+    function endGame(won) {
+      gameOver = true;
+      clearInterval(timerInterval);
+
+      // Reveal full field
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          const cell = gridData[r][c];
+          const el = document.getElementById(`cell-${r}-${c}`);
+          if (cell.isBiscuit) {
+            el.innerHTML = cell.biscuitData.icon;
+            if (!cell.revealed) el.classList.add('safe-biscuit');
+          }
+        }
+      }
+
+      const modal = document.getElementById('modalOverlay');
+      const title = document.getElementById('modalTitle');
+      const msg = document.getElementById('modalMsg');
+
+      if (won) {
+        playBeep(880, 0.3);
+        const mult = DIFFICULTIES[currentDifficulty].mult;
+        const timeBonus = Math.max(10, 1000 - (timerSeconds * 5));
+        const finalScore = (timeBonus + (lives * 300)) * mult;
+
+        document.getElementById('scoreDisplay').innerText = finalScore;
+        title.innerText = "GRID NEUTRALIZED // VICTORY";
+        title.style.color = "#00ff66";
+        msg.innerHTML = `
+          All 9 exploding biscuits isolated successfully!<br><br>
+          <strong>Clear Time:</strong> ${timerSeconds} seconds<br>
+          <strong>Difficulty Multiplier:</strong> ${mult}x<br>
+          <strong>Final Score:</strong> ${finalScore} PTS
+        `;
+      } else {
+        title.innerText = "CRITICAL DETONATION // FAILED";
+        title.style.color = "#ff3366";
+        msg.innerHTML = `
+          The biscuit network ignited beyond containment!<br><br>
+          <strong>Biscuits Defused:</strong> ${disarmedIndices.size} / 9<br>
+          <strong>Survival Time:</strong> ${timerSeconds}s
+        `;
+      }
+
+      modal.style.display = 'flex';
+    }
+
+    initGame();
+  </script>
+</body>
+</html>
