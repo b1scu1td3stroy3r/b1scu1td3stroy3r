@@ -37,6 +37,7 @@ Final-year **BSc (Honours) Computing & IT** student at **The Open University**, 
 | **[pink-wafer](https://github.com/b1scu1td3stroy3r/pink-wafer)** | Multi-media Steganography Extraction & Injection | HTML5 / Typed Arrays |
 | **[custard-cream](https://github.com/b1scu1td3stroy3r/custard-cream)** | Cryptographic Ciphers & Hash Cracking Suite | Python / Web Crypto |
 | **[shortbread](https://github.com/b1scu1td3stroy3r/shortbread)** | Network Packet & HTTP Header Inspection | Python / Raw Sockets |
+| **[Hobnobber](https://github.com/b1scu1td3stroy3r/hobnobber)** | Passive Git metadata & Google Dork correlation engine | Python |
 
 ---
 
