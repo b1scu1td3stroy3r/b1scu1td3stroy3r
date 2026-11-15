@@ -29,6 +29,17 @@ Final-year **BSc (Honours) Computing & IT** student at **The Open University**, 
 - 📝 **Technical Publications:** [Security Research & CTF Archive](https://b1scu1td3stroy3r.github.io/b1scu1td3stroy3r/writeups.html)
 ---
 
+## 🌟 Flagship Project
+
+### 🍪 [Biscuit CRM](https://github.com/b1scu1td3stroy3r/Biscuit-CRM) — Zero-Storage Business Operating System
+> **Live App:** [biscuit-crm-six.vercel.app](https://biscuit-crm-six.vercel.app) · **Stack:** TypeScript, Next.js, React, Tailwind CSS, IndexedDB, Web Workers
+
+An open-source, local-first CRM and operations platform built around **zero central database storage**—eliminating third-party data-processor breach risk by keeping 100% of company data inside client-owned **Google Workspace** or **Microsoft 365** environments.
+
+- **Security & Data Sovereignty:** Zero-storage architecture with client-side IndexedDB outbox queuing, cryptographic role gates, hardened HTTP security headers, and strict RBAC.
+- **Full-Cycle Operations:** Cross-department pipeline state machine (`Lead → Sales → Procurement → Logistics → Support`), interactive drag-and-drop Gantt scheduling with Calendar sync, and an anti-cheat Training Hub.
+- **Enterprise Integrations:** Native OAuth/SSO with Microsoft Entra ID & Google Workspace, live UK Companies House lookups, and automated draft invoicing for Xero & QuickBooks.
+
 ### 🛡️ Security Tools & Proofs of Concept
 
 | Repository | Focus Area | Technology |
