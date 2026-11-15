@@ -40,6 +40,8 @@ An open-source, local-first CRM and operations platform built around **zero cent
 - **Full-Cycle Operations:** Cross-department pipeline state machine (`Lead → Sales → Procurement → Logistics → Support`), interactive drag-and-drop Gantt scheduling with Calendar sync, and an anti-cheat Training Hub.
 - **Enterprise Integrations:** Native OAuth/SSO with Microsoft Entra ID & Google Workspace, live UK Companies House lookups, and automated draft invoicing for Xero & QuickBooks.
 
+---
+
 ### 🛡️ Security Tools & Proofs of Concept
 
 | Repository | Focus Area | Technology |
