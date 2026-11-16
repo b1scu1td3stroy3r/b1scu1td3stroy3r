@@ -72,6 +72,7 @@ An open-source, local-first CRM and operations platform built around **zero cent
 ---
 
 ### 📬 Connect & Verify
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/terry-white-mbcs-78781b394/)
 [![Credly](https://img.shields.io/badge/Credly-Verified_Badges-FF6B00?style=flat&logo=credly&logoColor=white)](https://www.credly.com/users/terry_white)
 [![Hack The Box](https://img.shields.io/badge/b1scu1td3stroy3r-9FEF00?style=flat&logo=hackthebox&logoColor=black)](https://app.hackthebox.com/public/users/2571595)
 [![CTFtime](https://img.shields.io/badge/CTFtime-b1scu1td3stroy3r-E63946?style=flat&logo=flag&logoColor=white)](https://ctftime.org/user/237405)
