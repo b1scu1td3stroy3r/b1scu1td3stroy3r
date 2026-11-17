@@ -20,7 +20,7 @@
 ### 🛡️ Operator Dossier
 Final-year **BSc (Honours) Computing & IT** student at **The Open University**, focusing on offensive application security, defensive header inspection, and practical CTF exploitation tooling.
 
-- 🎓 **Academic Standing:** Final Year Computing & IT (The Open University)
+- 🎓 **Academic & Professional Standing:** Final-year BSc (Honours) Computing & IT student (The Open University), MBCS (Member of the British Computer Society)
 - 🎯 **Security Focus:** Insecure Object Deserialisation, Web Transport Security, Cryptographic Analysis & Reverse Engineering
 - 📜 **Verified Credentials:** [Credly Profile](https://www.credly.com/users/terry_white)
 - 🚩 **Offensive Labs:** [Hack The Box Profile](https://app.hackthebox.com/public/users/2571595)
