@@ -29,6 +29,7 @@
       max-width: 900px;
       margin: 0 auto;
     }
+    /* Navigation Badge Buttons */
     .nav-bar {
       margin-bottom: 24px;
       display: flex;
@@ -77,25 +78,6 @@
       margin-top: 24px;
       color: var(--htb-text-bright);
     }
-    .skills-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 14px;
-      margin: 20px 0;
-    }
-    .skill-card {
-      background: var(--htb-card);
-      border: 1px solid var(--htb-border);
-      border-left: 3px solid var(--htb-green);
-      border-radius: 6px;
-      padding: 14px 16px;
-    }
-    .skill-card strong {
-      display: block;
-      color: var(--htb-text-bright);
-      margin-bottom: 4px;
-      font-size: 0.95rem;
-    }
     .meta-box {
       background: var(--htb-card);
       border: 1px solid var(--htb-border);
@@ -116,6 +98,42 @@
     .meta-item span {
       color: var(--htb-text-bright);
       font-size: 0.95rem;
+    }
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 14px;
+      margin: 20px 0;
+    }
+    .skill-card {
+      background: var(--htb-card);
+      border: 1px solid var(--htb-border);
+      border-left: 3px solid var(--htb-green);
+      border-radius: 6px;
+      padding: 14px 16px;
+    }
+    .skill-card strong {
+      display: block;
+      color: var(--htb-text-bright);
+      margin-bottom: 4px;
+      font-size: 0.95rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      background: var(--htb-card);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    th, td {
+      border: 1px solid var(--htb-border);
+      padding: 10px 14px;
+      text-align: left;
+    }
+    th {
+      background: #172033;
+      color: var(--htb-green);
     }
     code {
       font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
@@ -176,45 +194,99 @@
     <div class="meta-box">
       <div class="meta-item">
         <strong>Target OS</strong>
-        <span>Linux</span>
+        <span>Linux (Ubuntu 22.04.5 LTS)</span>
       </div>
       <div class="meta-item">
         <strong>Target IP</strong>
         <span>10.129.244.146</span>
       </div>
       <div class="meta-item">
-        <strong>Application Stack</strong>
-        <span>CraftCMS 5.6.16, Nginx, MySQL, Telnet (Local)</span>
+        <strong>Initial Access</strong>
+        <span>CraftCMS Recon &rarr; Config Extraction (.env) &rarr; Database Audit &rarr; SSH</span>
       </div>
       <div class="meta-item">
-        <strong>Exploitation Path</strong>
-        <span>Web Recon &rarr; CMS Enumeration &rarr; Database Config Leak &rarr; Local Service Pivoting &rarr; Root Shell</span>
+        <strong>Privilege Escalation</strong>
+        <span>Local Service Enumeration &rarr; Root Shell Access</span>
       </div>
     </div>
 
     <h2>Skills Used &amp; Key Concepts</h2>
     <div class="skills-grid">
       <div class="skill-card">
-        <strong>Port &amp; Service Scanning</strong>
-        <span>Enumerating listening ports with Nmap, identifying web services and local-only sockets.</span>
+        <strong>Service &amp; Port Enumeration</strong>
+        <span>Full TCP port mapping using Nmap to isolate open network entry points.</span>
       </div>
       <div class="skill-card">
         <strong>CMS Version Auditing</strong>
-        <span>Fingerprinting CraftCMS versions and identifying application context and runner accounts (`www-data`).</span>
+        <span>Fingerprinting CraftCMS application builds and analyzing running user contexts (`www-data`).</span>
       </div>
       <div class="skill-card">
         <strong>Configuration Leakage</strong>
-        <span>Extracting database connection secrets and environment variables from hidden configuration files (`.env`).</span>
+        <span>Harvesting database connection secrets from hidden environment files (`.env`).</span>
       </div>
       <div class="skill-card">
-        <strong>Local Service Enumeration</strong>
-        <span>Discovering local-only listening services like Telnet (version 2.7) and MySQL database instances.</span>
-      </div>
-      <div class="skill-card">
-        <strong>System Privileges</strong>
-        <span>Accessing user home directories and escalating to root privileges to retrieve system flags.</span>
+        <strong>Local Socket &amp; Service Inspection</strong>
+        <span>Utilizing socket diagnostic tools (`ss`) to identify non-public listening services like Telnet and MySQL.</span>
       </div>
     </div>
+
+    <h2>Guided Task Answers</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Task #</th>
+          <th>Question</th>
+          <th>Answer</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Task 1</td>
+          <td>How many open TCP ports are listening on Orion?</td>
+          <td><code>2</code>[cite: 5]</td>
+        </tr>
+        <tr>
+          <td>Task 2</td>
+          <td>What is the version of CraftCMS running on the target?</td>
+          <td><code>5.6.16</code>[cite: 5]</td>
+        </tr>
+        <tr>
+          <td>Task 3</td>
+          <td>Which user is running CraftCMS?</td>
+          <td><code>www-data</code>[cite: 6]</td>
+        </tr>
+        <tr>
+          <td>Task 4</td>
+          <td>Which file contains the password for the MySQL database?</td>
+          <td><code>.env</code>[cite: 6]</td>
+        </tr>
+        <tr>
+          <td>Task 5</td>
+          <td>What is the password that can be obtained from the MySQL database?</td>
+          <td><code>darkangel</code>[cite: 6]</td>
+        </tr>
+        <tr>
+          <td>Task 6</td>
+          <td>Submit the flag located in the Adam user's home directory.</td>
+          <td><code>[REDACTED_USER_FLAG]</code></td>
+        </tr>
+        <tr>
+          <td>Task 7</td>
+          <td>Which service, unrelated to CraftCMS, is open only locally on Orion?</td>
+          <td><code>telnet</code>[cite: 6]</td>
+        </tr>
+        <tr>
+          <td>Task 8</td>
+          <td>What is the version of the service found?</td>
+          <td><code>2.7</code>[cite: 6]</td>
+        </tr>
+        <tr>
+          <td>Task 9</td>
+          <td>Submit the flag located in the root user's home directory.</td>
+          <td><code>[REDACTED_ROOT_FLAG]</code></td>
+        </tr>
+      </tbody>
+    </table>
 
     <h2>1. Reconnaissance &amp; Port Scanning</h2>
     <p>An initial Nmap service and version scan was executed against the target host:</p>
@@ -230,18 +302,12 @@ PORT   STATE SERVICE VERSION
 |_http-server-header: nginx/1.18.0 (Ubuntu)
 Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel</code></pre>
 
-    <h2>2. Web Enumeration &amp; CraftCMS Analysis</h2>
-    <p>Adding <code>orion.htb</code> to the local hosts file allowed access to the Orion Telecom web application running Nginx and CraftCMS.</p>
-    <ul>
-      <li><strong>Open TCP Ports:</strong> 2 (Port 22 SSH and Port 80 HTTP)[cite: 5]</li>
-      <li><strong>CraftCMS Version:</strong> <code>5.6.16</code>[cite: 5]</li>
-      <li><strong>Running User:</strong> <code>www-data</code>[cite: 6]</li>
-      <li><strong>Database Configuration File:</strong> <code>.env</code>[cite: 6]</li>
-    </ul>
+    <h2>2. Web Application &amp; CMS Enumeration</h2>
+    <p>Accessing the web portal via <code>orion.htb</code> revealed an Orion Telecom service platform running on CraftCMS version <code>5.6.16</code>, executed by the user <code>www-data</code>[cite: 6, 7].</p>
 
-    <h2>3. Credential Discovery &amp; Database Access</h2>
-    <p>Reviewing the application environment variables and configuration files (`.env`) uncovered database credentials. Querying the internal MySQL database (listening locally on port 3306) yielded authentication details such as user passwords (e.g., <code>darkangel</code>)[cite: 6].</p>
-    <p>Local socket enumeration also revealed internal services bound exclusively to localhost:</p>
+    <h2>3. Configuration Analysis &amp; Credential Recovery</h2>
+    <p>Inspecting application configuration files unmasked the <code>.env</code> file containing database credentials[cite: 6]. Querying the MySQL instance revealed internal user passwords such as <code>darkangel</code>[cite: 6].</p>
+    <p>Local socket analysis performed via `ss` exposed internal-only listening services bound locally:</p>
     <pre><code>adam@orion:~$ ss -tlnup</code></pre>
     <pre><code>Netid  State   Recv-Q  Send-Q  Local Address:Port    Peer Address:Port Process  
 udp    UNCONN  0       0       127.0.0.53%lo:53         0.0.0.0:*             
@@ -251,17 +317,17 @@ tcp    LISTEN  0       80          127.0.0.1:3306       0.0.0.0:*
 tcp    LISTEN  0       128          0.0.0.0:22          0.0.0.0:*             
 tcp    LISTEN  0       511           0.0.0.0:80         0.0.0.0:*             
 tcp    LISTEN  0       128              [::]:22             [::]:*         </code></pre>
-    <p>Notably, a local Telnet service (version <code>2.7</code>) was found running on port 23[cite: 6, 7].</p>
+    <p>This confirmed a local Telnet service (version <code>2.7</code>) running on port 23[cite: 6].</p>
 
     <h2>4. Initial Access &amp; User Flag</h2>
-    <p>Using discovered credentials, SSH access was established as user <code>adam</code>:</p>
+    <p>Using harvested credentials, SSH access was established as the user <code>adam</code>:</p>
     <pre><code>ssh adam@10.129.244.146</code></pre>
-    <p>Navigating to the user's home directory revealed the user flag:</p>
+    <p>Navigating to the home directory allowed reading the user flag:</p>
     <pre><code>adam@orion:~$ cat user.txt
 [REDACTED_USER_FLAG]</code></pre>
 
     <h2>5. Privilege Escalation &amp; Root Flag</h2>
-    <p>Enumerating system privileges and local administrative scripts allowed escalation to root. Accessing the root user's home directory provided the final flag:</p>
+    <p>System enumeration enabled administrative escalation to the root account. Accessing the root directory yielded the final flag:</p>
     <pre><code>root@orion:~# cat /root/root.txt
 [REDACTED_ROOT_FLAG]</code></pre>
 
